@@ -157,6 +157,7 @@
       <Compile Include="Properties\AssemblyInfo.cs" />
     </ItemGroup>
     <ItemGroup>
+      <Content Include=".gitignore" />
       <Content Include="Views\Default\MySqlModule.Controllers\MySql\assets\css\styles.css" />
       <Content Include="Views\Default\MySqlModule.Controllers\MySql\Index.cshtml" />
       <Content Include="Views\Default\MySqlModule.Controllers\MySql\index.html" />
