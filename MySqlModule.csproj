@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <ProjectGuid>{B95F1851-BBB4-42B7-A590-E3EBCCBA266C}</ProjectGuid>
+        <OutputType>Library</OutputType>
+        <AppDesignerFolder>Properties</AppDesignerFolder>
+        <RootNamespace>MySqlModule</RootNamespace>
+        <AssemblyName>MySqlModule</AssemblyName>
+        <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+        <FileAlignment>512</FileAlignment>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>bin\Debug\</OutputPath>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugType>pdbonly</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>bin\Release\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <ItemGroup>
+      <Reference Include="Kendo.Mvc, Version=2020.2.513.545, Culture=neutral, PublicKeyToken=121fae78165ba3d4">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\Kendo.Mvc.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="MySql.Data, Version=6.7.9.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d">
+        <HintPath>packages\MySql.Data.6.7.9\lib\net45\MySql.Data.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="System" />
+      <Reference Include="System.Data" />
+      <Reference Include="System.Web" />
+      <Reference Include="System.Web.Mvc, Version=5.2.7.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+        <HintPath>..\..\LYHMEExtensions\packages\Microsoft.AspNet.Mvc.5.2.7\lib\net45\System.Web.Mvc.dll</HintPath>
+      </Reference>
+      <Reference Include="TCAdmin.Basic, Version=1.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.Basic.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.DatabaseProviders.MySql, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.DatabaseProviders.MySql.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.DatabaseProviders.Odbc, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.DatabaseProviders.Odbc.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.DatabaseProviders.SqLite, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.DatabaseProviders.SqLite.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.FtpServer.ModuleApi, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.FtpServer.ModuleApi.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.GameHosting.ModuleApi, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.GameHosting.ModuleApi.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.GameHosting.SDK, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.GameHosting.SDK.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.GameHosting.SDK.Web, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.GameHosting.SDK.Web.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.GameHosting.SDK.Web.References, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.GameHosting.SDK.Web.References.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.Helper, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.Helper.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.Interfaces, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.Interfaces.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.LogProviders.Text, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.LogProviders.Text.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.SDK, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.SDK.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.SDK.Language, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.SDK.Language.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.SDK.TimeZones, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.SDK.TimeZones.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.SDK.Web, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.SDK.Web.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.SDK.Web.MVC, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.SDK.Web.MVC.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.SDK.Web.References, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.SDK.Web.References.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.Support.ModuleApi, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.Support.ModuleApi.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.Support.SDK, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.Support.SDK.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.Support.SDK.Web, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.Support.SDK.Web.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.TaskScheduler.ModuleApi, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.TaskScheduler.ModuleApi.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.TaskScheduler.SDK, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.TaskScheduler.SDK.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.Web.MVC, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.Web.MVC.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="TCAdmin.WebServer, Version=2.0.0.0, Culture=neutral, PublicKeyToken=336a280da999c339">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\TCAdmin.WebServer.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+      <Reference Include="Telerik.Web.UI, Version=2012.3.1016.35, Culture=neutral, PublicKeyToken=121fae78165ba3d4">
+        <HintPath>packages\TCAdmin.2.0.149.5\lib\netstandard2.0\Telerik.Web.UI.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Include="Controllers\MySQLController.cs" />
+      <Compile Include="Models\MySQL\MySQLViewModel.cs" />
+      <Compile Include="Properties\AssemblyInfo.cs" />
+    </ItemGroup>
+    <ItemGroup>
+      <Content Include="Views\Default\MySqlModule.Controllers\MySql\assets\css\styles.css" />
+      <Content Include="Views\Default\MySqlModule.Controllers\MySql\Index.cshtml" />
+      <Content Include="Views\Default\MySqlModule.Controllers\MySql\index.html" />
+      <Content Include="Views\Default\MySqlModule.Controllers\MySql\_Databases.cshtml" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Include="app.config" />
+      <None Include="packages.config" />
+    </ItemGroup>
+    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+    <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+         Other similar extension points exist, see Microsoft.Common.targets.
+    <Target Name="BeforeBuild">
+    </Target>
+    <Target Name="AfterBuild">
+    </Target>
+    -->
+</Project>

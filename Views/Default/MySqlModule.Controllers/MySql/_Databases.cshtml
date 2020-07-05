@@ -1,0 +1,52 @@
+<div class="col-xl-8 col-lg-7">
+    <!-- Service Status Card -->
+    <div class="k-card shadow mb-4">
+        <!-- Card Header - Accordion -->
+        <div id="#CreateSQLCard" class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Configured Databases</h6>
+        </div>
+        <div class="k-card-body">
+            <div class="row">
+                <div class="col-l-3">
+                    @(Html.Kendo().Grid<MySqlModule.Models.MySql.MySqlGridViewModel>()
+                        .Name("MySQLGrid")
+                        .AllowCopy(true)
+                        .NoRecords("You haven't created any databases yet!")
+                        .Selectable(selectable => selectable.Mode(GridSelectionMode.Multiple).Type(GridSelectionType.Cell))
+                        .Columns(columns =>
+                        {
+                            columns.Bound(c => c.DatabaseHost).HtmlAttributes(new { style = "white-space: nowrap" } ).Title("DB Host").Width(250);
+                            columns.Bound(c => c.DatabaseName).HtmlAttributes(new { style = "white-space: nowrap" } ).Title("DB Name");
+                            columns.Bound(c => c.DatabaseUsername).HtmlAttributes(new { style = "white-space: nowrap" } ).Title("DB User").Width(150);
+                            columns.Bound(c => c.DatabasePassword).HtmlAttributes(new { style = "white-space: nowrap" } ).Title("DB Pass").Width(150);
+                            columns.Bound(c => c.DatabaseLink).Hidden(true);
+                            columns.Bound(c => c.ServiceId).Hidden(true);
+                            columns.Command(c => c.Custom("Manage").Click("redirectToManage").Text("phpMyAdmin")).Width(140);
+                            columns.Command(c => c.Custom("ManageService").Click("redirectToService").Text("Service")).Width(100);
+                        })
+                        .HtmlAttributes(new {style = "height: 550px; white-space: nowrap;"})
+                        .Scrollable()
+                        .DataSource(x =>
+                        {
+                            x.Ajax()
+                                .Read("DatabasesByUserRead", "MySql")
+                                .Group(a => a.Add(p => p.DatabaseLocation));
+                        })
+                        )
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function redirectToManage(e) {
+        const dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+        const link = dataItem.DatabaseLink + "index.php?pma_username=" + dataItem.DatabaseUsername;
+        window.open(link, "_blank");
+    }
+    function redirectToService(e) {
+            const dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            const link = "/Service/Home/" + dataItem.ServiceId;
+            window.open(link, "_blank");
+    }
+</script>

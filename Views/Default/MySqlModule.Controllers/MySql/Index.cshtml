@@ -1,0 +1,85 @@
+﻿@model MySqlModule.Models.MySql.MySqlModel
+
+@{
+    Page.Title = "MySql Management";
+    <script>
+        $(document).ready(function () {
+            document.title = "@TCAdmin.SDK.Web.MVC.Template.GetSelectedTemplateTitle() " + "MySql Manager";
+            $('.header-text').html("MySql Manager")
+        });
+    </script>
+    Layout = this.GetTemplateFile("Shared/Main.cshtml", true);
+}
+
+@section sidebar{
+    @Html.Partial("_DefaultSidebar")
+}
+
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<link rel="stylesheet" href="../Views/@TCAdmin.SDK.Web.MVC.Template.GetSelectedTemplate()/ThemeBuilder.css">
+<style>body { line-height: 1.2 !important; } </style>
+<br/><div class="row" style="margin: 5px;">
+    <!-- Name Card -->
+    <div class="col-auto col-xl-3">
+            <div class="k-card col-auto">
+                <div class="k-card-body">
+                    <div class="k-card-title font-weight-bold text-primary">Databases Allowed: </div>
+                    <div class="k-card-text h5 mb-0">@Model.CurrentDatabases/@Model.MaxDatabases</div>
+                </div>
+            </div>
+        </div>
+    <!-- Name Card -->
+    <div class="col-auto col-xl-3">
+        <div class="k-card col-auto">
+            <div class="k-card-body">
+                <div class="k-card-title font-weight-bold text-primary">Eligible Locations: </div>
+                <div class="k-card-text h5 mb-0">@(string.Join(" | ", Model.EligibleLocations.Datacenters.Select(x => x.Location)))</div>
+            </div>
+        </div>
+    </div>
+</div>
+<br/>
+<div class="row" style="margin: 5px;">
+    @Html.Action("DatabasesGrid", "MySql")
+    <div class="col-auto col-xl-4 col-lg-5">
+        <!-- Service Status Card -->
+        <div class="k-card shadow mb-4">
+            <!-- Card Header - Accordion -->
+            <div id="#CreateSQLCard" class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Manage Databases</h6>
+            </div>
+            <div class="k-card-body">
+                <div class="row">
+                    <div class="col-l-3 col-auto" style="padding: 10px;">
+                        @if (Model.CurrentDatabases < Model.MaxDatabases)
+                        {
+                            using (Ajax.BeginForm("CreateDatabase", "MySql", null))
+                            {
+                                <h6>Create Database</h6>
+                                @Html.Kendo().TextBoxFor(model => model.CreationUsername).Name("requestDbUsername").Enable(false).HtmlAttributes(new {disabled = true, style = "width: auto;", @class = "k-primary"})
+                                @Html.Kendo().TextBox().Name("requestDbName").HtmlAttributes(new { @class = "k-input"})<br/><br/>
+                                <h6>For Service: </h6>
+                                @Html.Kendo().DropDownList().Name("requestServiceId1").BindTo(Model.CreationServiceIds).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
+                                @Html.Kendo().Button().Name("Create").Content("Create").HtmlAttributes(new  {style = "margin-bottom: 10px; margin-top: 10px;", @class = "k-primary"})
+                            }
+                        }<br/>
+                        @if(Model.CurrentDatabases > 0){
+                            using (Ajax.BeginForm("DeleteDatabase", "MySql", null))
+                            {
+                                <h6>Delete Database</h6>
+                                @Html.Kendo().DropDownList().Name("requestServiceId2").BindTo(Model.DeletionUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
+                                @Html.Kendo().Button().Name("Delete").Content("Delete").HtmlAttributes(new {@class = "k-primary"})
+                            }<br/>
+                            using (Ajax.BeginForm("ResetPassword", "MySql", null))
+                            {
+                                <h6>Reset Database Password</h6>
+                                @Html.Kendo().DropDownList().Name("requestServiceId3").BindTo(Model.ResetUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
+                                @Html.Kendo().Button().Name("Reset").Content("Reset").HtmlAttributes(new {@class = "k-primary"})
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
