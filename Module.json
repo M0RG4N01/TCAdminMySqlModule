@@ -1,0 +1,10 @@
+﻿{
+  "MinimumTcAdminVersion": "2.0.149.0",
+  "SqlProfiles": {
+    "InstallSql": "install.sql",
+    "UpdateSql": "update.sql",
+    "UninstallSql": "uninstall.sql"
+  },
+  "Dll": "MySqlModule.dll",
+  "Dependencies": ["MySql.Data.dll"]
+}
