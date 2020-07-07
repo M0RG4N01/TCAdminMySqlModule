@@ -57,7 +57,7 @@
                             {
                                 <h6>Create Database</h6>
                                 @Html.Kendo().TextBoxFor(model => model.CreationUsername).Name("requestDbUsername").Enable(false).HtmlAttributes(new {disabled = true, style = "width: auto;", @class = "k-primary"})
-                                @Html.Kendo().TextBox().Name("requestDbName").HtmlAttributes(new { @class = "k-input"})<br/><br/>
+                                @Html.Kendo().TextBox().Name("requestDbName").HtmlAttributes(new { placeholder="Database Name Suffix", @class = "k-input"})<br/><br/>
                                 <h6>For Service: </h6>
                                 @Html.Kendo().DropDownList().Name("requestServiceId1").BindTo(Model.CreationServiceIds).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
                                 @Html.Kendo().Button().Name("Create").Content("Create").HtmlAttributes(new  {style = "margin-bottom: 10px; margin-top: 10px;", @class = "k-primary"})
