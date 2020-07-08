@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Web.Mvc;
@@ -65,6 +66,13 @@ namespace MySqlModule.Controllers
                 return JavaScript(
                     "TCAdmin.Ajax.ShowBasicDialog('Error', 'That database name is not allowed due to illegal characters!');$('body').css('cursor', 'default');");
             }
+            
+            if (requestDbName.Length > 64)
+            {
+                return JavaScript(
+                    "TCAdmin.Ajax.ShowBasicDialog('Error', 'That database name is too long!');$('body').css('cursor', 'default');");
+            }
+            
 
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false).Cast<Service>().ToList();
@@ -93,27 +101,44 @@ namespace MySqlModule.Controllers
                                                            datacenter.MySqlPluginRoot + ";password=" +
                                                            datacenter.MySqlPluginPassword + ";");
                         createDb.Open();
-                        var cmd = createDb.CreateCommand();
-                        var createDbSql = string.Concat(
-                            "CREATE DATABASE " + dbName + ";"
-                            , " GRANT USAGE on *.* to " + dbUser + "@`%` IDENTIFIED BY " + "'" + dbPass + "';"
-                            , " GRANT ALL PRIVILEGES ON " + dbName + ".* to " + dbUser + "@`%`;");
-                        cmd.CommandText = createDbSql;
-                        cmd.ExecuteNonQuery();
-                        createDb.Close();
+                        if (createDb.ServerVersion != null)
+                        {
+                            var sqlVer = Regex.Match(createDb.ServerVersion, @"\d+").Value;
+                            if (Convert.ToInt32(sqlVer) < 8)
+                            {
+                                var cmd = createDb.CreateCommand();
+                                var createDbSql = string.Concat(
+                                    "CREATE DATABASE " + dbName + ";"
+                                    , "GRANT USAGE on *.* to '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
+                                    , "GRANT ALL PRIVILEGES ON " + dbName + ".* to '" + dbUser + "'@'%';");
+                                cmd.CommandText = createDbSql;
+                                cmd.ExecuteNonQuery();
+                                createDb.Close();
+                            }
+                            else
+                            {
+                                var cmd = createDb.CreateCommand();
+                                var createDbSql = string.Concat(
+                                    "CREATE DATABASE " + dbName + ";"
+                                    , "CREATE USER '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
+                                    , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
+                                cmd.CommandText = createDbSql;
+                                cmd.ExecuteNonQuery();
+                                createDb.Close();
+                            }
+                        }
+                        
+                        service.Variables["_MySQLPlugin::Host"] = datacenter.MySqlPluginIp;
+                        service.Variables["_MySQLPlugin::Username"] = dbUser;
+                        service.Variables["_MySQLPlugin::Password"] = dbPass;
+                        service.Variables["_MySQLPlugin::Database"] = dbName;
                     }
-                    catch
+                    catch(Exception e)
                     {
-                        return JavaScript(
-                            "TCAdmin.Ajax.ShowBasicDialog('Error', 'Unable to connect to the remote MySQL host. Please contact an Administrator!');$('body').css('cursor', 'default');");
+                        return JavaScript($"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
-
-                    service.Variables["_MySQLPlugin::Host"] = datacenter.MySqlPluginIp;
-                    service.Variables["_MySQLPlugin::Username"] = dbUser;
-                    service.Variables["_MySQLPlugin::Password"] = dbPass;
-                    service.Variables["_MySQLPlugin::Database"] = dbName;
                 }
-                else if (server.MySqlPluginUseDatacenter == false && server.MySqlPluginIp != string.Empty)
+                else if (!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
                 {
                     try
                     {
@@ -122,32 +147,48 @@ namespace MySqlModule.Controllers
                                                            server.MySqlPluginPassword +
                                                            ";");
                         createDb.Open();
-                        var cmd = createDb.CreateCommand();
-                        var createDbSql = string.Concat(
-                            "CREATE DATABASE " + dbName + ";"
-                            , " GRANT USAGE on *.* to " + dbUser + "@`%` IDENTIFIED BY " + "'" + dbPass + "';"
-                            , " GRANT ALL PRIVILEGES ON " + dbName + ".* to " + dbUser + "@`%`;");
-                        cmd.CommandText = createDbSql;
-                        cmd.ExecuteNonQuery();
-                        createDb.Close();
+                        if (createDb.ServerVersion != null)
+                        {
+                            var sqlVer = Regex.Match(createDb.ServerVersion, @"\d+").Value;
+                            if (Convert.ToInt32(sqlVer) < 8)
+                            {
+                                var cmd = createDb.CreateCommand();
+                                var createDbSql = string.Concat(
+                                    "CREATE DATABASE " + dbName + ";"
+                                    , "GRANT USAGE on *.* to '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
+                                    , "GRANT ALL PRIVILEGES ON " + dbName + ".* to '" + dbUser + "'@'%';");
+                                cmd.CommandText = createDbSql;
+                                cmd.ExecuteNonQuery();
+                                createDb.Close();
+                            }
+                            else
+                            {
+                                var cmd = createDb.CreateCommand();
+                                var createDbSql = string.Concat(
+                                    "CREATE DATABASE " + dbName + ";"
+                                    , "CREATE USER '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
+                                    , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
+                                cmd.CommandText = createDbSql;
+                                cmd.ExecuteNonQuery();
+                                createDb.Close();
+                            }
+                        }
+                        
+                        service.Variables["_MySQLPlugin::Host"] = server.MySqlPluginIp;
+                        service.Variables["_MySQLPlugin::Username"] = dbUser;
+                        service.Variables["_MySQLPlugin::Password"] = dbPass;
+                        service.Variables["_MySQLPlugin::Database"] = dbName;
                     }
-                    catch
+                    catch(Exception e)
                     {
-                        return JavaScript(
-                            "TCAdmin.Ajax.ShowBasicDialog('Error', 'Unable to connect to the remote MySQL host. Please contact an Administrator!');$('body').css('cursor', 'default');");
+                        return JavaScript($"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
-
-                    service.Variables["_MySQLPlugin::Host"] = server.MySqlPluginIp;
-                    service.Variables["_MySQLPlugin::Username"] = dbUser;
-                    service.Variables["_MySQLPlugin::Password"] = dbPass;
-                    service.Variables["_MySQLPlugin::Database"] = dbName;
                 }
                 else
                 {
                     return JavaScript(
                         "TCAdmin.Ajax.ShowBasicDialog('Error', 'An Administrator has not configured the location of this service for the MySql Module!');$('body').css('cursor', 'default');");
                 }
-
                 service.Save();
             }
             finally
@@ -178,7 +219,7 @@ namespace MySqlModule.Controllers
                 var dbUser = service.Variables["_MySQLPlugin::Username"].ToString();
                 var dbName = service.Variables["_MySQLPlugin::Database"].ToString();
 
-                if (server.MySqlPluginUseDatacenter)
+                if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
                     try
                     {
@@ -193,19 +234,18 @@ namespace MySqlModule.Controllers
                         cmd.CommandText = deleteDbSql;
                         cmd.ExecuteNonQuery();
                         deleteDb.Close();
+                        
+                        service.Variables["_MySQLPlugin::Host"] = null;
+                        service.Variables["_MySQLPlugin::Username"] = null;
+                        service.Variables["_MySQLPlugin::Password"] = null;
+                        service.Variables["_MySQLPlugin::Database"] = null;
                     }
-                    catch
+                    catch(Exception e)
                     {
-                        return JavaScript(
-                            "TCAdmin.Ajax.ShowBasicDialog('Error', 'Unable to connect to the remote MySQL host. Please contact an Administrator!');$('body').css('cursor', 'default');");
+                        return JavaScript($"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
-
-                    service.Variables["_MySQLPlugin::Host"] = null;
-                    service.Variables["_MySQLPlugin::Username"] = null;
-                    service.Variables["_MySQLPlugin::Password"] = null;
-                    service.Variables["_MySQLPlugin::Database"] = null;
                 }
-                else
+                else if(!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
                 {
                     try
                     {
@@ -220,17 +260,16 @@ namespace MySqlModule.Controllers
                         cmd.CommandText = deleteDbSql;
                         cmd.ExecuteNonQuery();
                         deleteDb.Close();
+                        
+                        service.Variables["_MySQLPlugin::Host"] = null;
+                        service.Variables["_MySQLPlugin::Username"] = null;
+                        service.Variables["_MySQLPlugin::Password"] = null;
+                        service.Variables["_MySQLPlugin::Database"] = null;
                     }
-                    catch
+                    catch(Exception e)
                     {
-                        return JavaScript(
-                            "TCAdmin.Ajax.ShowBasicDialog('Error', 'Unable to connect to the remote MySQL host. Please contact an Administrator!');$('body').css('cursor', 'default');");
+                        return JavaScript($"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
-
-                    service.Variables["_MySQLPlugin::Host"] = null;
-                    service.Variables["_MySQLPlugin::Username"] = null;
-                    service.Variables["_MySQLPlugin::Password"] = null;
-                    service.Variables["_MySQLPlugin::Database"] = null;
                 }
 
                 service.Save();
@@ -263,7 +302,7 @@ namespace MySqlModule.Controllers
                 var dbUser = service.Variables["_MySQLPlugin::Username"].ToString();
                 var dbPass = System.Web.Security.Membership.GeneratePassword(12, 2);
 
-                if (server.MySqlPluginUseDatacenter)
+                if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
                     try
                     {
@@ -271,21 +310,35 @@ namespace MySqlModule.Controllers
                                                           datacenter.MySqlPluginRoot + ";password=" +
                                                           datacenter.MySqlPluginPassword + ";");
                         resetDb.Open();
-                        var cmd = resetDb.CreateCommand();
-                        var resetDbSql = "SET PASSWORD FOR '" + dbUser + "' = PASSWORD('" + dbPass + "');";
-                        cmd.CommandText = resetDbSql;
-                        cmd.ExecuteNonQuery();
-                        resetDb.Close();
+                        if (resetDb.ServerVersion != null)
+                        {
+                            var sqlVer = Regex.Match(resetDb.ServerVersion, @"\d+").Value;
+                            if (Convert.ToInt32(sqlVer) < 8)
+                            {
+                                var cmd = resetDb.CreateCommand();
+                                var resetDbSql = "SET PASSWORD FOR '" + dbUser + "' = PASSWORD('" + dbPass + "');";
+                                cmd.CommandText = resetDbSql;
+                                cmd.ExecuteNonQuery();
+                                resetDb.Close();
+                            }
+                            else
+                            {
+                                var cmd = resetDb.CreateCommand();
+                                var resetDbSql = "ALTER USER '" + dbUser + "' IDENTIFIED BY '" + dbPass + "';";
+                                cmd.CommandText = resetDbSql;
+                                cmd.ExecuteNonQuery();
+                                resetDb.Close();
+                            }
+                        }
+                        service.Variables["_MySQLPlugin::Password"] = dbPass;
                     }
-                    catch
+                    catch(Exception e)
                     {
-                        return JavaScript(
-                            "TCAdmin.Ajax.ShowBasicDialog('Error', 'Unable to connect to the remote MySQL host. Please contact an Administrator!');$('body').css('cursor', 'default');");
+                        return JavaScript($"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
-
-                    service.Variables["_MySQLPlugin::Password"] = dbPass;
+                    
                 }
-                else
+                else if(!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
                 {
                     try
                     {
@@ -293,21 +346,33 @@ namespace MySqlModule.Controllers
                                                           server.MySqlPluginRoot + ";password=" +
                                                           server.MySqlPluginPassword + ";");
                         resetDb.Open();
-                        var cmd = resetDb.CreateCommand();
-                        var resetDbSql = "SET PASSWORD FOR '" + dbUser + "' = PASSWORD('" + dbPass + "');";
-                        cmd.CommandText = resetDbSql;
-                        cmd.ExecuteNonQuery();
-                        resetDb.Close();
+                        if (resetDb.ServerVersion != null)
+                        {
+                            var sqlVer = Regex.Match(resetDb.ServerVersion, @"\d+").Value;
+                            if (Convert.ToInt32(sqlVer) < 8)
+                            {
+                                var cmd = resetDb.CreateCommand();
+                                var resetDbSql = "SET PASSWORD FOR '" + dbUser + "' = PASSWORD('" + dbPass + "');";
+                                cmd.CommandText = resetDbSql;
+                                cmd.ExecuteNonQuery();
+                                resetDb.Close();
+                            }
+                            else
+                            {
+                                var cmd = resetDb.CreateCommand();
+                                var resetDbSql = "ALTER USER '" + dbUser + "' IDENTIFIED BY '" + dbPass + "';";
+                                cmd.CommandText = resetDbSql;
+                                cmd.ExecuteNonQuery();
+                                resetDb.Close();
+                            }
+                        }
+                        service.Variables["_MySQLPlugin::Password"] = dbPass;
                     }
-                    catch
+                    catch(Exception e)
                     {
-                        return JavaScript(
-                            "TCAdmin.Ajax.ShowBasicDialog('Error', 'Unable to connect to the remote MySQL host. Please contact an Administrator!');$('body').css('cursor', 'default');");
+                        return JavaScript($"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
-
-                    service.Variables["_MySQLPlugin::Password"] = dbPass;
                 }
-
                 service.Save();
             }
             finally
@@ -373,7 +438,6 @@ namespace MySqlModule.Controllers
             {
                 ObjectBase.GlobalSkipSecurityCheck = false;
             }
-            
         }
 
         private static int GetUserServicesCount()
@@ -409,8 +473,7 @@ namespace MySqlModule.Controllers
             {
                 ObjectBase.GlobalSkipSecurityCheck = true;
                 foreach (var datacenter in services
-                    .Select(service => new Datacenter(new Server(service.ServerId).DatacenterId)).Where(datacenter =>
-                        !datacenters.Any(x => x.DatacenterId == datacenter.DatacenterId)))
+                    .Select(service => new Datacenter(new Server(service.ServerId).DatacenterId)).Where(datacenter => datacenters.All(x => x.DatacenterId != datacenter.DatacenterId)))
                 {
                     datacenters.Add(datacenter);
                 }
