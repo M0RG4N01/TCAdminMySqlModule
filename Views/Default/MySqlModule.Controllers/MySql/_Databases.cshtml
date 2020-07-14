@@ -41,7 +41,10 @@
 <script>
     function redirectToManage(e) {
         const dataItem = this.dataItem($(e.currentTarget).closest("tr"));
-        const link = dataItem.DatabaseLink + "index.php?pma_username=" + dataItem.DatabaseUsername;
+        var link = dataItem.DatabaseLink + "index.php?pma_username=" + dataItem.DatabaseUsername;
+        if(!dataItem.DatabaseLink) {
+            link = "https://phpmyadmin.tcadmin.com/index.php";
+        }
         window.open(link, "_blank");
     }
     function redirectToService(e) {
