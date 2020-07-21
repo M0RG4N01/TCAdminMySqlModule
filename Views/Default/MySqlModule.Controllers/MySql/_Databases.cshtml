@@ -21,8 +21,8 @@
                             columns.Bound(c => c.DatabasePassword).HtmlAttributes(new { style = "white-space: nowrap" } ).Title("DB Pass").Width(150);
                             columns.Bound(c => c.DatabaseLink).Hidden(true);
                             columns.Bound(c => c.ServiceId).Hidden(true);
-                            columns.Command(c => c.Custom("Manage").Click("redirectToManage").Text("phpMyAdmin")).Width(140);
                             columns.Command(c => c.Custom("ManageService").Click("redirectToService").Text("Service")).Width(100);
+                            columns.Command(c => c.Custom("Manage").Click("redirectToManage").Text("phpMyAdmin").Visible("hideManage")).Width(140);
                         })
                         .HtmlAttributes(new {style = "height: 550px; white-space: nowrap;"})
                         .Scrollable()
@@ -39,6 +39,11 @@
     </div>
 </div>
 <script>
+    
+    function hideManage(e){
+        return e.DatabaseHost != "localhost";
+    }
+
     function redirectToManage(e) {
         const dataItem = this.dataItem($(e.currentTarget).closest("tr"));
         var link = dataItem.DatabaseLink + "index.php?pma_username=" + dataItem.DatabaseUsername;
