@@ -10,6 +10,7 @@ namespace MySqlModule.Models.MySql
         public int CurrentDatabases;
         public int MaxDatabases;
         public string CreationUsername;
+        public int MigrationDbCount;
         public List<SelectListItem> CreationServiceIds;
         public List<SelectListItem> DeletionUsernames;
         public List<SelectListItem> ResetUsernames;
@@ -33,6 +34,7 @@ namespace MySqlModule.Models.MySql
         public string DatabaseLocation { get; }
         public string DatabaseLink { get; }
         public string ServiceId { get; }
+        
         public MySqlGridViewModel(string databaseHost, string databaseName, string databaseUsername, string databasePassword, string databaseLocation, string databaseLink, string serviceId)
         {
             DatabaseHost = databaseHost;

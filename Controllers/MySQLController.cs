@@ -27,7 +27,8 @@ namespace MySqlModule.Controllers
                 EligibleLocations = GetLocations(),
                 CreationUsername = GetDbUsername(),
                 DeletionUsernames = GetDbDeletionUsernames(),
-                ResetUsernames = GetDbResetUsernames()
+                ResetUsernames = GetDbResetUsernames(),
+                MigrationDbCount = GetOldUserDatabases()
             };
 
             return View(model);
@@ -382,6 +383,34 @@ namespace MySqlModule.Controllers
 
             return JavaScript("window.location.reload(false);");
         }
+        
+        public ActionResult MigrateDatabases()
+        {
+            var user = TCAdmin.SDK.Session.GetCurrentUser();
+            var services = Service.GetServices(user, false).Cast<Service>().ToList();
+
+            foreach (var service in services.Where(service => service.Variables.HasValue("MySQLUser")))
+            {
+                try
+                {
+                    service.Variables["_MySQLPlugin::Host"] = "localhost";
+                    service.Variables["_MySQLPlugin::Username"] = service.Variables["MySQLUser"];
+                    service.Variables["_MySQLPlugin::Database"] = service.Variables["MySQLUser"];
+                    service.Variables["_MySQLPlugin::Password"] = service.Variables["MySQLPassword"];
+
+                    service.Variables["MySQLUser"] = null;
+                    service.Variables["MySQLPassword"] = null;
+                }
+                catch (Exception e)
+                {
+                    return JavaScript(
+                        $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
+                }
+                service.Save();
+            }
+            
+            return JavaScript("window.location.reload(false);");
+        }
 
         private static string GetDbUsername()
         {
@@ -438,6 +467,15 @@ namespace MySqlModule.Controllers
             {
                 ObjectBase.GlobalSkipSecurityCheck = false;
             }
+        }
+        
+        private static int GetOldUserDatabases()
+        {
+            var user = TCAdmin.SDK.Session.GetCurrentUser();
+            var services = Service.GetServices(user, false)
+                .Cast<Service>().ToList();
+            
+            return services.Select(service => service.Variables.HasValue("MySQLUser")).Count(oldDbExists => oldDbExists);
         }
 
         private static int GetUserServicesCount()
