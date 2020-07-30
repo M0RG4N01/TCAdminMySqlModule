@@ -407,6 +407,7 @@ namespace MySqlModule.Controllers
                         $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                 }
                 service.Save();
+                service.Configure();
             }
             
             return JavaScript("window.location.reload(false);");
