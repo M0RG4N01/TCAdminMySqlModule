@@ -786,15 +786,7 @@ namespace MySqlModule.Controllers
             try
             {
                 ObjectBase.GlobalSkipSecurityCheck = true;
-                return (from service in services
-                    where service.Variables["_MySQLPlugin::Host"] != null
-                    let mysqlHost = service.Variables["_MySQLPlugin::Host"].ToString()
-                    let mysqlUser = service.Variables["_MySQLPlugin::Username"].ToString()
-                    let mysqlPass = service.Variables["_MySQLPlugin::Password"].ToString()
-                    let mysqlDatabase = service.Variables["_MySQLPlugin::Database"].ToString()
-                    let datacenter = new Datacenter(new Server(service.ServerId).DatacenterId)
-                    select new MySqlGridViewModel(mysqlHost, mysqlDatabase, mysqlUser, mysqlPass, datacenter.Location,
-                        datacenter.MySqlPluginPhpMyAdmin, service.ServiceId.ToString())).ToList();
+                return (from service in services where service.Variables["_MySQLPlugin::Host"] != null let mysqlHost = service.Variables["_MySQLPlugin::Host"].ToString() let mysqlUser = service.Variables["_MySQLPlugin::Username"].ToString() let mysqlPass = service.Variables["_MySQLPlugin::Password"].ToString() let mysqlDatabase = service.Variables["_MySQLPlugin::Database"].ToString() let datacenter = new Datacenter(new Server(service.ServerId).DatacenterId) let server = new Server(service.ServerId) let phpmyAdmin = server.MySqlPluginUseDatacenter ? datacenter.MySqlPluginPhpMyAdmin : server.MySqlPluginPhpMyAdmin select new MySqlGridViewModel(mysqlHost, mysqlDatabase, mysqlUser, mysqlPass, datacenter.Location, phpmyAdmin, service.ServiceId.ToString())).ToList();
             }
             finally
             {
