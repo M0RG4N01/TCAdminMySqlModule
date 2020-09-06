@@ -94,7 +94,7 @@ namespace MySqlModule.Controllers
                 var dbUser = $"{user.UserName}_{service.ServiceId}";
                 var dbName = $"{user.UserName}_{requestDbName.Replace(" ", "_")}";
                 var dbPass = System.Web.Security.Membership.GeneratePassword(12, 2);
-
+                
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
                     try
@@ -539,8 +539,8 @@ namespace MySqlModule.Controllers
                             }
                         }
 
-                        Console.WriteLine(Path.Combine(service.RootDirectory + dbName + ".sql"));
-                        sqlBackup.ExportToFile(Path.Combine(service.RootDirectory + dbName + ".sql"));
+                        Console.WriteLine(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
+                        sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
                         backupDb.Close();
                     }
 
@@ -587,8 +587,8 @@ namespace MySqlModule.Controllers
                             }
                         }
 
-                        Console.WriteLine(Path.Combine(service.RootDirectory + dbName + ".sql"));
-                        sqlBackup.ExportToFile(Path.Combine(service.RootDirectory + dbName + ".sql"));
+                        Console.WriteLine(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
+                        sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
                         backupDb.Close();
                     }
 
@@ -610,7 +610,7 @@ namespace MySqlModule.Controllers
             {
                 var server = new Server(service.ServerId);
                 var datacenter = new Datacenter(server.DatacenterId);
-                var dirInfo = new DirectoryInfo(Path.Combine(service.RootDirectory));
+                var dirInfo = new DirectoryInfo(service.RootDirectory);
                 var files = dirInfo.GetFiles().Where(f => (f.Name.EndsWith(".sql")))
                     .OrderByDescending(p => p.CreationTime).ToArray();
                 
@@ -674,7 +674,7 @@ namespace MySqlModule.Controllers
                         var cmd2 = restoreDb2.CreateCommand();
                         var sqlRestore = new MySqlBackup(cmd2);
                         restoreDb2.Open();
-                        sqlRestore.ImportFromFile(Path.Combine(service.RootDirectory + "\\" + dbName + ".sql"));
+                        sqlRestore.ImportFromFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
                         restoreDb2.Close();
                     }
 
@@ -729,12 +729,12 @@ namespace MySqlModule.Controllers
                         var cmd2 = restoreDb2.CreateCommand();
                         var sqlRestore = new MySqlBackup(cmd2);
                         restoreDb2.Open();
-                        sqlRestore.ImportFromFile(Path.Combine(service.RootDirectory + "\\" + dbName + ".sql"));
+                        sqlRestore.ImportFromFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
                         restoreDb2.Close();
                     }
                 }
                 
-                System.IO.File.Delete(Path.Combine(service.RootDirectory + files[0].Name));
+                System.IO.File.Delete(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, files[0].Name, server.OperatingSystem));
 
                 service.Save();
             }
