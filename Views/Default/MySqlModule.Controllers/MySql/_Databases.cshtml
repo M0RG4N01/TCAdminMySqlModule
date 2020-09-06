@@ -42,7 +42,7 @@
 <script>
     
     function hideManage(e){
-        return e.DatabaseHost != "localhost";
+        return e.DatabaseHost != "localhost" || e.DatabaseHost != "127.0.0.1";
     }
 
     function redirectToManage(e) {
