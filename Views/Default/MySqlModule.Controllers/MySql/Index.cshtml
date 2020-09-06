@@ -21,14 +21,15 @@
 
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 <link rel="stylesheet" href="../Views/@TCAdmin.SDK.Web.MVC.Template.GetSelectedTemplate()/ThemeBuilder.css">
+<link rel="stylesheet" href="../Views/@TCAdmin.SDK.Web.MVC.Template.GetSelectedTemplate()/Custom.css">
 <style>body { line-height: 1.2 !important; } </style>
 <br/><div class="row" style="margin: 5px;">
     <!-- Name Card -->
     <div class="col-auto col-xl-3">
             <div class="k-card col-auto">
                 <div class="k-card-body">
-                    <div class="k-card-title font-weight-bold text-primary">Databases Allowed: </div>
-                    <div class="k-card-text h5 mb-0">@Model.CurrentDatabases/@Model.MaxDatabases</div>
+                    <div class="k-card-title font-weight-bold text-primary" id="dbAllow">Databases Allowed: </div>
+                    <div class="k-card-text h5 mb-0" id="dbAllowSub">@Model.CurrentDatabases/@Model.MaxDatabases</div>
                 </div>
             </div>
         </div>
@@ -36,8 +37,8 @@
     <div class="col-auto col-xl-3">
         <div class="k-card col-auto">
             <div class="k-card-body">
-                <div class="k-card-title font-weight-bold text-primary">Eligible Locations: </div>
-                <div class="k-card-text h5 mb-0">@(string.Join(" | ", Model.EligibleLocations.Datacenters.Select(x => x.Location)))</div>
+                <div class="k-card-title font-weight-bold text-primary" id="dbLocations">Eligible Locations: </div>
+                <div class="k-card-text h5 mb-0" id="dbLocationsSub">@(string.Join(" | ", Model.EligibleLocations.Datacenters.Select(x => x.Location)))</div>
             </div>
         </div>
     </div>
@@ -50,7 +51,7 @@
         <div class="k-card shadow mb-4">
             <!-- Card Header - Accordion -->
             <div id="#CreateSQLCard" class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Manage Databases</h6>
+                <h6 class="m-0 font-weight-bold text-primary" id="dbManage">Manage Databases</h6>
             </div>
             <div class="k-card-body">
                 <div class="row">
@@ -59,10 +60,10 @@
                         {
                             using (Ajax.BeginForm("CreateDatabase", "MySql", null))
                             {
-                                <h6>Create Database</h6>
+                                <h6 id="dbCreate">Create Database</h6>
                                 @Html.Kendo().TextBoxFor(model => model.CreationUsername).Name("requestDbUsername").Enable(false).HtmlAttributes(new {disabled = true, style = "width: auto;", @class = "k-primary"})
                                 @Html.Kendo().TextBox().Name("requestDbName").HtmlAttributes(new { placeholder="Enter Database Name", @class = "k-input"})<br/><br/>
-                                <h6>For Service: </h6>
+                                <h6 id="dbService">For Service: </h6>
                                 @Html.Kendo().DropDownList().Name("requestServiceId1").BindTo(Model.CreationServiceIds).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
                                 @Html.Kendo().Button().Name("Create").Content("Create").HtmlAttributes(new  {style = "margin-bottom: 10px; margin-top: 10px;", @class = "k-primary"})
                             }
@@ -70,13 +71,13 @@
                         @if(Model.CurrentDatabases > 0){
                             using (Ajax.BeginForm("DeleteDatabase", "MySql", null))
                             {
-                                <h6>Delete Database</h6>
+                                <h6 id="dbDelete">Delete Database</h6>
                                 @Html.Kendo().DropDownList().Name("requestServiceId2").BindTo(Model.DeletionUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
                                 @Html.Kendo().Button().Name("Delete").Content("Delete").HtmlAttributes(new {@class = "k-primary"})
                             }<br/>
                             using (Ajax.BeginForm("ResetPassword", "MySql", null))
                             {
-                                <h6>Reset Database Password</h6>
+                                <h6 id="dbReset">Reset Database Password</h6>
                                 @Html.Kendo().DropDownList().Name("requestServiceId3").BindTo(Model.ResetUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
                                 @Html.Kendo().Button().Name("Reset").Content("Reset").HtmlAttributes(new {@class = "k-primary"})
                             }
@@ -91,14 +92,14 @@
             <div class="k-card shadow mb-4">
                 <!-- Card Header - Accordion -->
                 <div id="#MigrateSQLCard" class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Migrate Databases</h6>
+                    <h6 class="m-0 font-weight-bold text-primary" id="dbMigrate">Migrate Databases</h6>
                 </div>
                 <div class="k-card-body">
                     <div class="row">
                         <div class="col-l-3 col-auto" style="padding: 10px;">
                             @using (Ajax.BeginForm("MigrateDatabases", "MySql", null))
                             {
-                                <h6>You have @Model.MigrationDbCount unmigrated databases! :( <br/><br/> Use this button to migrate them:</h6>
+                                <h6 id="dbMigrateSub">You have @Model.MigrationDbCount unmigrated databases! :( <br/><br/> Use this button to migrate them:</h6>
                                 @Html.Kendo().Button().Name("Migrate").Content("Migrate Databases").HtmlAttributes(new {style = "margin-bottom: 10px; margin-top: 10px;", @class = "k-primary"})
                             }
                         </div>
