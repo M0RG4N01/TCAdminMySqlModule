@@ -251,9 +251,9 @@
       <Content Include="install.sql" />
       <Content Include="Module.json" />
       <Content Include="uninstall.sql" />
-      <Content Include="Views\Default\MySqlModule.Controllers\MySql\Index.cshtml" />
-      <Content Include="Views\Default\MySqlModule.Controllers\MySql\_Databases.cshtml" />
-      <Content Include="Views\Default\Shared\Main.Plugin.MySql.css" />
+      <Content Include="Views\MySqlModule.Controllers\MySql\Index.cshtml" />
+      <Content Include="Views\MySqlModule.Controllers\MySql\_Databases.cshtml" />
+      <Content Include="Views\Shared\Main.Plugin.MySql.css" />
     </ItemGroup>
     <ItemGroup>
       <None Include="app.config" />

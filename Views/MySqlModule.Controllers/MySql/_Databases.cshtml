@@ -34,12 +34,52 @@
                                 .Group(a => a.Add(p => p.DatabaseLocation));
                         })
                         )
+                    
+                    @(Html.Kendo().ContextMenu()
+                        .Name("menu")
+                        .Target("#MySQLGrid")
+                        .Filter("tr[role='row']")
+                        .Items(items =>
+                        {
+                            items.Add()
+                                .Text("Copy from row")
+                                .Items(c =>
+                                {
+                                    c.Add().Text("Database Host").HtmlAttributes(new { @class = "dbhostItem"});
+                                    c.Add().Text("Database Name").HtmlAttributes(new { @class = "dbnameItem"});;
+                                    c.Add().Text("Database User").HtmlAttributes(new { @class = "dbuserItem"});;
+                                    c.Add().Text("Database Password").HtmlAttributes(new { @class = "dbpassItem"});;
+                                });
+                        })
+                        .Events(e => e.Select("copy"))
+                        )
                 </div>
             </div>
         </div>
     </div>
 </div>
 <script>
+    function copy(e) { 
+        const grid = $("#MySQLGrid").getKendoGrid();
+        const dataItem = grid.dataItem($(e.target).closest("tr"));
+        const item = $(e.item);
+        let copyText = "";
+        
+        if (item.hasClass("dbhostItem")) {
+            copyText = dataItem.DatabaseHost;
+        }
+        else if (item.hasClass("dbnameItem")) {
+            copyText = dataItem.DatabaseName;
+        }
+        else if (item.hasClass("dbuserItem")) {
+            copyText = dataItem.DatabaseUsername;
+        }
+        else if (item.hasClass("dbpassItem")) {
+            copyText = dataItem.DatabasePassword;
+        }
+                
+        navigator.clipboard.writeText(copyText);
+    }
     
     function hideManage(e){
         return e.DatabaseHost != "localhost" || e.DatabaseHost != "127.0.0.1";
