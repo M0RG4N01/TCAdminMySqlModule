@@ -368,7 +368,7 @@ namespace MySqlModule.Controllers
                 var server = new Server(service.ServerId);
                 var datacenter = new Datacenter(server.DatacenterId);
                 var dbUser = service.Variables["_MySQLPlugin::Username"].ToString();
-                var dbPass = System.Web.Security.Membership.GeneratePassword(12, 2);
+                var dbPass = System.Web.Security.Membership.GeneratePassword(12, 0);
 
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
