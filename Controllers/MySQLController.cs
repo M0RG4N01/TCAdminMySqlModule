@@ -93,7 +93,7 @@ namespace MySqlModule.Controllers
                 var datacenter = new Datacenter(server.DatacenterId);
                 var dbUser = $"{user.UserName}_{service.ServiceId}";
                 var dbName = $"{user.UserName}_{requestDbName.Replace(" ", "_")}";
-                var dbPass = System.Web.Security.Membership.GeneratePassword(12, 2);
+                var dbPass = System.Web.Security.Membership.GeneratePassword(12, 0);
                 
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
