@@ -483,7 +483,7 @@ namespace MySqlModule.Controllers
 
             return JavaScript("window.location.reload(false);");
         }
-        
+
         public ActionResult BackupDatabase(int backupServiceId)
         {
             var user = TCAdmin.SDK.Session.GetCurrentUser();
@@ -492,17 +492,18 @@ namespace MySqlModule.Controllers
 
             if (service == null)
             {
-               return JavaScript(
+                return JavaScript(
                     "TCAdmin.Ajax.ShowBasicDialog('Error', ''You don't own this service');$('body').css('cursor', 'default');");
             }
-            
+
             try
             {
+                ObjectBase.GlobalSkipSecurityCheck = true;
                 var server = new Server(service.ServerId);
                 var datacenter = new Datacenter(server.DatacenterId);
                 var dbName = service.Variables["_MySQLPlugin::Database"].ToString();
                 var memory = new MemoryStream();
-                
+
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
                     using (MySqlConnection backupDb = new MySqlConnection(
@@ -532,7 +533,7 @@ namespace MySqlModule.Controllers
                                     }
                                 }
                             }
-                            
+
                             foreach (var table in tableList)
                             {
                                 var alterDbtable =
@@ -541,6 +542,7 @@ namespace MySqlModule.Controllers
                                 tableCmd.ExecuteNonQuery();
                             }
                         }
+
                         sqlBackup.ExportToMemoryStream(memory);
                         backupDb.Close();
                     }
@@ -575,7 +577,7 @@ namespace MySqlModule.Controllers
                                     }
                                 }
                             }
-                            
+
                             foreach (var table in tableList)
                             {
                                 var alterDbtable =
@@ -584,10 +586,12 @@ namespace MySqlModule.Controllers
                                 tableCmd.ExecuteNonQuery();
                             }
                         }
+
                         sqlBackup.ExportToMemoryStream(memory);
                         backupDb.Close();
                     }
                 }
+
                 memory.Position = 0;
                 return File(memory, "application/sql", $"{dbName}.sql");
             }
@@ -595,6 +599,10 @@ namespace MySqlModule.Controllers
             {
                 return JavaScript(
                     $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
+            }
+            finally
+            {
+                ObjectBase.GlobalSkipSecurityCheck = false;
             }
         }
 
