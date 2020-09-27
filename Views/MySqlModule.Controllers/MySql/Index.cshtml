@@ -72,15 +72,18 @@
                             using (Ajax.BeginForm("DeleteDatabase", "MySql", null))
                             {
                                 <h6 id="dbDelete">Delete Database</h6>
-                                @Html.Kendo().DropDownList().Name("requestServiceId2").BindTo(Model.DeletionUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
+                                @Html.Kendo().DropDownList().Name("requestServiceId2").BindTo(Model.DbUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
                                 @Html.Kendo().Button().Name("Delete").Content("Delete").HtmlAttributes(new {@class = "k-primary"})
                             }<br/>
                             using (Ajax.BeginForm("ResetPassword", "MySql", null))
                             {
                                 <h6 id="dbReset">Reset Database Password</h6>
-                                @Html.Kendo().DropDownList().Name("requestServiceId3").BindTo(Model.ResetUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
+                                @Html.Kendo().DropDownList().Name("requestServiceId3").BindTo(Model.DbUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
                                 @Html.Kendo().Button().Name("Reset").Content("Reset").HtmlAttributes(new {@class = "k-primary"})
-                            }
+                            }<br/>
+                            <h6 id="dbDownload">Download Database Backup</h6>
+                            @Html.Kendo().DropDownList().Name("backupServiceId").BindTo(Model.DbUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
+                            @Html.Kendo().Button().Name("Download").Content("Download").Events(x => x.Click("onDownload")).HtmlAttributes(new {@class = "k-primary"})
                         }
                     </div>
                 </div>
@@ -109,3 +112,10 @@
         }
     </div>
 </div>
+<script>
+    function onDownload() {
+        var serviceId = $("#backupServiceId").val();
+        var url = '@Url.Action("BackupDatabase", "MySql")';
+        window.location = url + "?backupServiceId=" + serviceId;
+    }
+</script>

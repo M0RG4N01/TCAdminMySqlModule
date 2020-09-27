@@ -1,4 +1,3 @@
-using System;
 using MySqlModule.Controllers;
 using TCAdmin.GameHosting.SDK.Objects;
 using TCAdmin.SDK.Integration;
@@ -25,10 +24,10 @@ namespace MySqlModule.Helpers
                     MySqlController.DeleteDatabase(thisService);
                     break;
                 case ServiceEvent.BeforeMove:
-                    MySqlController.BackupDatabase(thisService);
+                    MySqlController.BackupDatabaseOnMove(thisService);
                     break;
                 case ServiceEvent.AfterMove:
-                    MySqlController.RestoreDatabase(thisService);
+                    MySqlController.RestoreDatabaseOnMove(thisService);
                     break;
             }
 

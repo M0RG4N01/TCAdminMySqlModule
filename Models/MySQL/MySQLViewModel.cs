@@ -12,8 +12,7 @@ namespace MySqlModule.Models.MySql
         public string CreationUsername;
         public int MigrationDbCount;
         public List<SelectListItem> CreationServiceIds;
-        public List<SelectListItem> DeletionUsernames;
-        public List<SelectListItem> ResetUsernames;
+        public List<SelectListItem> DbUsernames;
         public MySqlEligibleLocations EligibleLocations;
     }
     public class MySqlEligibleLocations : BaseModel

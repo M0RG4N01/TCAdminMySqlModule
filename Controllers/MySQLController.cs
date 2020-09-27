@@ -27,8 +27,7 @@ namespace MySqlModule.Controllers
                 CreationServiceIds = GetUserServices(),
                 EligibleLocations = GetLocations(),
                 CreationUsername = GetDbUsername(),
-                DeletionUsernames = GetDbDeletionUsernames(),
-                ResetUsernames = GetDbResetUsernames(),
+                DbUsernames = GetExistingDbUsernames(),
                 MigrationDbCount = GetOldUserDatabases()
             };
 
@@ -484,8 +483,122 @@ namespace MySqlModule.Controllers
 
             return JavaScript("window.location.reload(false);");
         }
+        
+        public ActionResult BackupDatabase(int backupServiceId)
+        {
+            var user = TCAdmin.SDK.Session.GetCurrentUser();
+            var services = Service.GetServices(user, false).Cast<Service>().ToList();
+            var service = services.Find(x => x.ServiceId == backupServiceId);
 
-        public static void BackupDatabase(Service service)
+            if (service == null)
+            {
+               return JavaScript(
+                    "TCAdmin.Ajax.ShowBasicDialog('Error', ''You don't own this service');$('body').css('cursor', 'default');");
+            }
+            
+            try
+            {
+                var server = new Server(service.ServerId);
+                var datacenter = new Datacenter(server.DatacenterId);
+                var dbName = service.Variables["_MySQLPlugin::Database"].ToString();
+                var memory = new MemoryStream();
+                
+                if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
+                {
+                    using (MySqlConnection backupDb = new MySqlConnection(
+                        "server=" + datacenter.MySqlPluginIp + ";user=" +
+                        datacenter.MySqlPluginRoot + ";password=" +
+                        datacenter.MySqlPluginPassword + ";database=" + dbName + ";"))
+                    {
+                        backupDb.Open();
+                        var cmd = backupDb.CreateCommand();
+                        var sqlBackup = new MySqlBackup(cmd);
+                        var alterDbSql = $"ALTER DATABASE `{dbName}` COLLATE latin1_swedish_ci;";
+                        cmd.CommandText = alterDbSql;
+                        cmd.ExecuteNonQuery();
+
+                        const string tables = "SHOW TABLES;";
+                        using (MySqlCommand tableCmd = new MySqlCommand(tables, backupDb))
+                        {
+                            var tableList = new List<string>();
+
+                            using (MySqlDataReader reader = tableCmd.ExecuteReader())
+                            {
+                                if (reader != null)
+                                {
+                                    while (reader.Read())
+                                    {
+                                        tableList.Add(reader[$"Tables_in_{dbName}"].ToString());
+                                    }
+                                }
+                            }
+                            
+                            foreach (var table in tableList)
+                            {
+                                var alterDbtable =
+                                    $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                tableCmd.CommandText = alterDbtable;
+                                tableCmd.ExecuteNonQuery();
+                            }
+                        }
+                        sqlBackup.ExportToMemoryStream(memory);
+                        backupDb.Close();
+                    }
+                }
+                else if (!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
+                {
+                    using (MySqlConnection backupDb = new MySqlConnection("server=" + server.MySqlPluginIp + ";user=" +
+                                                                          server.MySqlPluginRoot + ";password=" +
+                                                                          server.MySqlPluginPassword + ";database=" +
+                                                                          dbName + ";"))
+                    {
+
+                        var cmd = backupDb.CreateCommand();
+                        var sqlBackup = new MySqlBackup(cmd);
+                        backupDb.Open();
+                        var alterDbSql = $"ALTER DATABASE `{dbName}` COLLATE latin1_swedish_ci;";
+                        cmd.CommandText = alterDbSql;
+                        cmd.ExecuteNonQuery();
+
+                        const string tables = "SHOW TABLES;";
+                        using (MySqlCommand tableCmd = new MySqlCommand(tables, backupDb))
+                        {
+                            var tableList = new List<string>();
+
+                            using (MySqlDataReader reader = tableCmd.ExecuteReader())
+                            {
+                                if (reader != null)
+                                {
+                                    while (reader.Read())
+                                    {
+                                        tableList.Add(reader[$"Tables_in_{dbName}"].ToString());
+                                    }
+                                }
+                            }
+                            
+                            foreach (var table in tableList)
+                            {
+                                var alterDbtable =
+                                    $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                tableCmd.CommandText = alterDbtable;
+                                tableCmd.ExecuteNonQuery();
+                            }
+                        }
+                        sqlBackup.ExportToMemoryStream(memory);
+                        backupDb.Close();
+                    }
+                }
+                memory.Position = 0;
+                return File(memory, "application/sql", $"{dbName}.sql");
+            }
+            catch (Exception e)
+            {
+                return JavaScript(
+                    $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
+            }
+        }
+
+        public static void BackupDatabaseOnMove(Service service)
         {
             try
             {
@@ -604,7 +717,7 @@ namespace MySqlModule.Controllers
             }
         }
 
-        public static void RestoreDatabase(Service service)
+        public static void RestoreDatabaseOnMove(Service service)
         {
             try
             {
@@ -751,20 +864,7 @@ namespace MySqlModule.Controllers
             return user.UserName + "_";
         }
 
-        private static List<SelectListItem> GetDbDeletionUsernames()
-        {
-            var user = TCAdmin.SDK.Session.GetCurrentUser();
-            var services = Service.GetServices(user, false)
-                .Cast<Service>().ToList();
-
-            return (from service in services
-                let usernameExists = service.Variables["_MySQLPlugin::Username"] != null
-                where usernameExists
-                let text = service.Variables["_MySQLPlugin::Database"].ToString()
-                select new SelectListItem {Text = text, Value = service.ServiceId.ToString()}).ToList();
-        }
-
-        private static List<SelectListItem> GetDbResetUsernames()
+        private static List<SelectListItem> GetExistingDbUsernames()
         {
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false)
