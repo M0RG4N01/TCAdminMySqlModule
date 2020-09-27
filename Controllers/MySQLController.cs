@@ -486,18 +486,19 @@ namespace MySqlModule.Controllers
         
         public ActionResult BackupDatabase(int backupServiceId)
         {
-            var user = TCAdmin.SDK.Session.GetCurrentUser();
-            var services = Service.GetServices(user, false).Cast<Service>().ToList();
-            var service = services.Find(x => x.ServiceId == backupServiceId);
-
-            if (service == null)
-            {
-               return JavaScript(
-                    "TCAdmin.Ajax.ShowBasicDialog('Error', ''You don't own this service');$('body').css('cursor', 'default');");
-            }
-            
             try
             {
+                ObjectBase.GlobalSkipSecurityCheck = true;
+                var user = TCAdmin.SDK.Session.GetCurrentUser();
+                var services = Service.GetServices(user, false).Cast<Service>().ToList();
+                var service = services.Find(x => x.ServiceId == backupServiceId);
+
+                if (service == null)
+                {
+                    return JavaScript(
+                         "TCAdmin.Ajax.ShowBasicDialog('Error', ''You don't own this service');$('body').css('cursor', 'default');");
+                }
+
                 var server = new Server(service.ServerId);
                 var datacenter = new Datacenter(server.DatacenterId);
                 var dbName = service.Variables["_MySQLPlugin::Database"].ToString();
@@ -595,6 +596,10 @@ namespace MySqlModule.Controllers
             {
                 return JavaScript(
                     $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
+            }
+            finally
+            {
+                ObjectBase.GlobalSkipSecurityCheck = false;
             }
         }
 
