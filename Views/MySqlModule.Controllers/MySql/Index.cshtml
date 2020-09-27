@@ -116,6 +116,6 @@
     function onDownload() {
         var serviceId = $("#backupServiceId").val();
         var url = '@Url.Action("BackupDatabase", "MySql")';
-        window.location = url + "?backupServiceId=" + serviceId;
+        window.location.replace(url + "?backupServiceId=" + serviceId);
     }
 </script>

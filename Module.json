@@ -6,5 +6,5 @@
     "UninstallSql": "uninstall.sql"
   },
   "Dll": "MySqlModule.dll",
-  "Dependencies": ["MySql.Data.dll", "MySqlBackup.dll"]
+  "Dependencies": ["MySql.Data.dll", "MySqlBackup.dll", "Ubiety.Dns.Core.dll"]
 }

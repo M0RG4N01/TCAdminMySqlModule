@@ -235,9 +235,9 @@
           <HintPath>packages\TCAdmin.2.0.156\lib\netstandard2.0\Telerik.Web.UI.dll</HintPath>
           <Private>True</Private>
         </Reference>
-        <Reference Include="Ubiety.Dns.Core, Version=2.2.1.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d">
-            <HintPath>packages\MySql.Data.8.0.21\lib\net452\Ubiety.Dns.Core.dll</HintPath>
-            <Private>True</Private>
+        <Reference Include="Ubiety.Dns.Core, Version=2.2.1.0, Culture=neutral, PublicKeyToken=null">
+          <HintPath>packages\Ubiety.Dns.Core.2.2.1\lib\netstandard2.0\Ubiety.Dns.Core.dll</HintPath>
+          <Private>True</Private>
         </Reference>
         <Reference Include="Zstandard.Net, Version=1.1.7.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d">
             <HintPath>packages\MySql.Data.8.0.21\lib\net452\Zstandard.Net.dll</HintPath>
