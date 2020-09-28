@@ -77,8 +77,12 @@
         else if (item.hasClass("dbpassItem")) {
             copyText = dataItem.DatabasePassword;
         }
-                
-        navigator.clipboard.writeText(copyText);
+        
+        if(window.isSecureContext) {
+          navigator.clipboard.writeText(copyText);
+        } else {
+          TCAdmin.Ajax.ShowBasicDialog("Highlight + Right click text to copy", "<div style='text-align: center;'>" + copyText + "</div>");
+        }
     }
     
     function hideManage(e){
