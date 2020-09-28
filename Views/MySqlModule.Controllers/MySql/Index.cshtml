@@ -10,6 +10,14 @@
         $(document).ready(function () {
             document.title = "@TCAdmin.SDK.Web.MVC.Template.GetSelectedTemplateTitle() " + "MySql Manager";
             $('.header-text').html("MySql Manager")
+            @if (TempData.ContainsKey("Error"))
+            {
+                <text>
+                    TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');
+                    console.log(`@TempData["Error"]`);
+                    $('body').css('cursor', 'default');
+                </text>
+            }
         });
     </script>
     Layout = this.GetTemplateFile("Shared/Main.cshtml", true);

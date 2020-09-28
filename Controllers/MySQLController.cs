@@ -596,8 +596,18 @@ namespace MySqlModule.Controllers
             }
             catch (Exception e)
             {
-                return JavaScript(
-                    $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
+                var model = new MySqlModel
+                {
+                    CurrentDatabases = GetUserDatabases().Count,
+                    MaxDatabases = GetUserServices().Count,
+                    CreationServiceIds = GetUnusedUserServices(),
+                    EligibleLocations = GetLocations(),
+                    CreationUsername = GetDbUsername(),
+                    DbUsernames = GetExistingDbUsernames(),
+                    MigrationDbCount = GetOldUserDatabases()
+                };
+                TempData["Error"] = e.Message;
+                return View("Index", model);
             }
             finally
             {
