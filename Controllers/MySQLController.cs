@@ -23,8 +23,8 @@ namespace MySqlModule.Controllers
             var model = new MySqlModel
             {
                 CurrentDatabases = GetUserDatabases().Count,
-                MaxDatabases = GetUserServicesCount(),
-                CreationServiceIds = GetUserServices(),
+                MaxDatabases = GetUserServices().Count,
+                CreationServiceIds = GetUnusedUserServices(),
                 EligibleLocations = GetLocations(),
                 CreationUsername = GetDbUsername(),
                 DbUsernames = GetExistingDbUsernames(),
@@ -50,7 +50,7 @@ namespace MySqlModule.Controllers
 
         public ActionResult CreateDatabase(int requestServiceId1, string requestDbName)
         {
-            if (GetUserDatabases().Count >= GetUserServicesCount())
+            if (GetUserDatabases().Count >= GetUserServices().Count)
             {
                 return JavaScript(
                     "TCAdmin.Ajax.ShowBasicDialog('Error', 'You have reached your database limit!');$('body').css('cursor', 'default');");
@@ -591,7 +591,6 @@ namespace MySqlModule.Controllers
                         backupDb.Close();
                     }
                 }
-
                 memory.Position = 0;
                 return File(memory, "application/sql", $"{dbName}.sql");
             }
@@ -750,8 +749,6 @@ namespace MySqlModule.Controllers
                                                              datacenter.MySqlPluginRoot + ";password=" +
                                                              datacenter.MySqlPluginPassword + ";"))
                     {
-
-
                         var cmd = restoreDb.CreateCommand();
                         restoreDb.Open();
                         if (restoreDb.ServerVersion != null)
@@ -791,7 +788,6 @@ namespace MySqlModule.Controllers
                                                                  dbName +
                                                                  ";"))
                     {
-
                         var cmd2 = restoreDb2.CreateCommand();
                         var sqlRestore = new MySqlBackup(cmd2);
                         restoreDb2.Open();
@@ -904,22 +900,18 @@ namespace MySqlModule.Controllers
 
         private static int GetOldUserDatabases()
         {
-            var user = TCAdmin.SDK.Session.GetCurrentUser();
-            var services = Service.GetServices(user, false)
-                .Cast<Service>().ToList();
-
+            var services = GetUserServices();
             return services.Count(service => service.Variables.HasValue("MySQLUser") && !string.IsNullOrEmpty(service.Variables["MySQLUser"].ToString()));
         }
 
-        private static int GetUserServicesCount()
+        private static List<Service> GetUserServices()
         {
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false);
-
-            return services.Count;
+            return services.Cast<Service>().ToList();
         }
 
-        private static List<SelectListItem> GetUserServices()
+        private static List<SelectListItem> GetUnusedUserServices()
         {
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false)
