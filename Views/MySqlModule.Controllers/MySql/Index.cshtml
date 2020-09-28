@@ -26,24 +26,45 @@
 <br/><div class="row" style="margin: 5px;">
     <!-- Name Card -->
     <div class="col-auto col-xl-3">
-            <div class="k-card col-auto">
-                <div class="k-card-body">
-                    <div class="k-card-title font-weight-bold text-primary" id="dbAllow">Databases Allowed: </div>
-                    <div class="k-card-text h5 mb-0" id="dbAllowSub">@Model.CurrentDatabases/@Model.MaxDatabases</div>
-                </div>
+        <div class="k-card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between" id="dbAllow">
+                <h6 class="m-0 font-weight-bold text-primary" id="dbAllowinner">Databases Allowed:</h6>
             </div>
-        </div>
-    <!-- Name Card -->
-    <div class="col-auto col-xl-3">
-        <div class="k-card col-auto">
             <div class="k-card-body">
-                <div class="k-card-title font-weight-bold text-primary" id="dbLocations">Eligible Locations: </div>
-                <div class="k-card-text h5 mb-0" id="dbLocationsSub">@(string.Join(" | ", Model.EligibleLocations.Datacenters.Select(x => x.Location)))</div>
+                <div class="k-card-text mb-0 text-center h5" style="padding: 10px;" id="dbAllowSub">@Model.CurrentDatabases/@Model.MaxDatabases</div>
             </div>
         </div>
     </div>
+    <!-- Name Card -->
+    <div class="col-auto col-xl-3">
+        <div class="k-card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between" id="dbLocations">
+                <h6 class="m-0 font-weight-bold text-primary" id="dbLocationsinner">Eligible Locations:</h6>
+            </div>
+            <div class="k-card-body">
+                <div class="k-card-text mb-0 h5" style="padding: 10px;" id="dbLocationsSub">@(string.Join(" | ", Model.EligibleLocations.Datacenters.Select(x => x.Location)))</div>
+            </div>
+        </div>
+    </div>
+    @if (Model.MigrationDbCount >= 1)
+    {
+        <div class="col-auto col-xl-3" style="margin-left: auto;">
+            <!-- Migration Card -->
+            <div class="k-card shadow mb-4">
+                <!-- Card Header - Accordion -->
+                <div id="#MigrateSQLCard" class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary" id="dbMigrate">Migrate Databases - @Model.MigrationDbCount database(s)! :( </h6>
+                </div>
+                <div class="k-card-body">
+                    @using (Ajax.BeginForm("MigrateDatabases", "MySql", null))
+                    {
+                        <div class="k-card-text mb-0 text-center h5" style="padding: 10px;" id="dbMigrateSub">@Html.Kendo().Button().Name("Migrate").Content("Migrate Databases").HtmlAttributes(new { style="padding: 2px; width: 100%", @class = "k-primary"}) </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
 </div>
-<br/>
 <div class="row" style="margin: 5px;">
     @Html.Action("DatabasesGrid", "MySql")
     <div class="col-auto col-xl-4 col-lg-5">
@@ -89,27 +110,6 @@
                 </div>
             </div>
         </div>
-        @if (Model.MigrationDbCount >= 1)
-        {
-            <!-- Migration Card -->
-            <div class="k-card shadow mb-4">
-                <!-- Card Header - Accordion -->
-                <div id="#MigrateSQLCard" class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary" id="dbMigrate">Migrate Databases</h6>
-                </div>
-                <div class="k-card-body">
-                    <div class="row">
-                        <div class="col-l-3 col-auto" style="padding: 10px;">
-                            @using (Ajax.BeginForm("MigrateDatabases", "MySql", null))
-                            {
-                                <h6 id="dbMigrateSub">You have @Model.MigrationDbCount unmigrated databases! :( <br/><br/> Use this button to migrate them:</h6>
-                                @Html.Kendo().Button().Name("Migrate").Content("Migrate Databases").HtmlAttributes(new {style = "margin-bottom: 10px; margin-top: 10px;", @class = "k-primary"})
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
     </div>
 </div>
 <script>
