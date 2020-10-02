@@ -641,6 +641,7 @@ namespace MySqlModule.Controllers
 
             try
             {
+                ObjectBase.GlobalSkipSecurityCheck = true;
                 var server = new Server(service.ServerId);
                 var datacenter = new Datacenter(server.DatacenterId);
                 var dbUser = service.Variables["_MySQLPlugin::Username"].ToString();
