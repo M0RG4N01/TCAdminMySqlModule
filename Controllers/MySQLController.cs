@@ -92,7 +92,7 @@ namespace MySqlModule.Controllers
                 var datacenter = new Datacenter(server.DatacenterId);
                 var dbUser = $"{user.UserName}_{service.ServiceId}";
                 var dbName = $"{user.UserName}_{requestDbName.Replace(" ", "_")}";
-                var dbPass = System.Web.Security.Membership.GeneratePassword(12, 0);
+                var dbPass = TCAdmin.SDK.Misc.Random.RandomPassword(12, 2, 2, 1, "!");
                 
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
@@ -370,7 +370,7 @@ namespace MySqlModule.Controllers
                 var server = new Server(service.ServerId);
                 var datacenter = new Datacenter(server.DatacenterId);
                 var dbUser = service.Variables["_MySQLPlugin::Username"].ToString();
-                var dbPass = System.Web.Security.Membership.GeneratePassword(12, 0);
+                var dbPass = TCAdmin.SDK.Misc.Random.RandomPassword(12, 2, 2, 1, "!");
 
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
@@ -828,7 +828,7 @@ namespace MySqlModule.Controllers
                 
                 var dbUser = $"{service.UserName}_{service.ServiceId}";
                 var dbName = Path.GetFileNameWithoutExtension(files[0].Name);
-                var dbPass = System.Web.Security.Membership.GeneratePassword(12, 2);
+                var dbPass = TCAdmin.SDK.Misc.Random.RandomPassword(12, 2, 2, 1, "!");
 
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
