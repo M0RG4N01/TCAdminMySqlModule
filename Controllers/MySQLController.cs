@@ -48,7 +48,7 @@ namespace MySqlModule.Controllers
             return Json(databases.ToDataSourceResult(request), JsonRequestBehavior.AllowGet);
         }
 
-        public ActionResult CreateDatabase(int requestServiceId1, string requestDbName)
+        public ActionResult CreateDatabase(int creationServiceId, string requestDbName)
         {
             if (GetUserDatabases().Count >= GetUserServices().Count)
             {
@@ -78,7 +78,7 @@ namespace MySqlModule.Controllers
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false).Cast<Service>().ToList();
 
-            var service = services.Find(x => x.ServiceId == requestServiceId1);
+            var service = services.Find(x => x.ServiceId == creationServiceId);
             if (service == null)
             {
                 return JavaScript(
@@ -203,12 +203,12 @@ namespace MySqlModule.Controllers
             return JavaScript("window.location.reload(false);");
         }
 
-        public ActionResult DeleteDatabase(int requestServiceId2)
+        public ActionResult DeleteDatabase(int manageServiceId)
         {
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false).Cast<Service>().ToList();
 
-            var service = services.Find(x => x.ServiceId == requestServiceId2);
+            var service = services.Find(x => x.ServiceId == manageServiceId);
             if (service == null)
             {
                 return JavaScript(
@@ -285,7 +285,10 @@ namespace MySqlModule.Controllers
                 ObjectBase.GlobalSkipSecurityCheck = false;
             }
 
-            return JavaScript("window.location.reload(false);");
+            return Json(new
+            {
+                Message = "Success!"
+            });
         }
 
         public static void DeleteDatabase(Service service)
@@ -349,12 +352,12 @@ namespace MySqlModule.Controllers
             }
         }
 
-        public ActionResult ResetPassword(int requestServiceId3)
+        public ActionResult ResetPassword(int manageServiceId)
         {
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false).Cast<Service>().ToList();
 
-            var service = services.Find(x => x.ServiceId == requestServiceId3);
+            var service = services.Find(x => x.ServiceId == manageServiceId);
             if (service == null)
             {
                 return JavaScript(
@@ -450,8 +453,11 @@ namespace MySqlModule.Controllers
             {
                 ObjectBase.GlobalSkipSecurityCheck = false;
             }
-
-            return JavaScript("window.location.reload(false);");
+            
+            return Json(new
+            {
+                Message = "Success!"
+            });
         }
 
         public ActionResult MigrateDatabases()
