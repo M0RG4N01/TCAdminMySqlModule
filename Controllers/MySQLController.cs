@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;using System.Web;
 using System.Web.Mvc;
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
@@ -613,6 +613,77 @@ namespace MySqlModule.Controllers
             {
                 ObjectBase.GlobalSkipSecurityCheck = false;
             }
+        }
+        
+        public ActionResult RestoreDatabase(IEnumerable<HttpPostedFileBase> files, int backupServiceId)
+        {
+            var user = TCAdmin.SDK.Session.GetCurrentUser();
+            var services = Service.GetServices(user, false).Cast<Service>().ToList();
+            var service = services.Find(x => x.ServiceId == backupServiceId);
+
+            if (service == null)
+            {
+                return Content(
+                    "\n\nError: Uh oh, something went wrong! \n\nDetails: \nYou don't own this service!");
+            }
+            
+            if (files == null)
+            {
+                return Content(
+                    "\n\nError: Uh oh, something went wrong! \n\nDetails: \nThere were no files uploaded!");
+            }
+
+            try
+            {
+                var server = new Server(service.ServerId);
+                var datacenter = new Datacenter(server.DatacenterId);
+                var dbUser = service.Variables["_MySQLPlugin::Username"].ToString();
+                var dbPass = service.Variables["_MySQLPlugin::Password"].ToString();
+                var dbName = service.Variables["_MySQLPlugin::Database"].ToString();
+                var file = files.FirstOrDefault();
+                file.InputStream.Position = 0;
+                if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
+                {
+                    using (MySqlConnection restoreDb2 = new MySqlConnection("server=" + datacenter.MySqlPluginIp + ";user=" +
+                                                                            dbUser + ";password=" +
+                                                                            dbPass + ";database=" +
+                                                                            dbName +
+                                                                            ";"))
+                    {
+                        var cmd2 = restoreDb2.CreateCommand();
+                        var sqlRestore = new MySqlBackup(cmd2);
+                        restoreDb2.Open();
+                        sqlRestore.ImportFromStream(file.InputStream);
+                        restoreDb2.Close();
+                    }
+
+                }
+                else if (!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
+                {
+                    using (MySqlConnection restoreDb2 = new MySqlConnection(
+                        "server=" + server.MySqlPluginIp + ";user=" +
+                        dbUser + ";password=" +
+                        dbPass + ";database=" + dbName + ";"))
+                    {
+
+                        var cmd2 = restoreDb2.CreateCommand();
+                        var sqlRestore = new MySqlBackup(cmd2);
+                        restoreDb2.Open();
+                        sqlRestore.ImportFromStream(file.InputStream);
+                        restoreDb2.Close();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                return Content(
+                    $"\n\nError: Uh oh, something went wrong! \n\nDetails: \n{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}");
+            }
+            finally
+            {
+                ObjectBase.GlobalSkipSecurityCheck = false;
+            }
+            return new EmptyResult(); //Return empty result to signify success
         }
 
         public static void BackupDatabaseOnMove(Service service)

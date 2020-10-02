@@ -36,7 +36,7 @@
     <div class="col-auto col-xl-3">
         <div class="k-card shadow mb-4">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between" id="dbAllow">
-                <h6 class="m-0 font-weight-bold text-primary" id="dbAllowinner">Databases Allowed:</h6>
+                <h6 class="m-0 font-weight-bold text-primary" id="dbAllowinner">Databases Allowed</h6>
             </div>
             <div class="k-card-body">
                 <div class="k-card-text mb-0 text-center h5" style="padding: 10px;" id="dbAllowSub">@Model.CurrentDatabases/@Model.MaxDatabases</div>
@@ -47,7 +47,7 @@
     <div class="col-auto col-xl-3">
         <div class="k-card shadow mb-4">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between" id="dbLocations">
-                <h6 class="m-0 font-weight-bold text-primary" id="dbLocationsinner">Eligible Locations:</h6>
+                <h6 class="m-0 font-weight-bold text-primary" id="dbLocationsinner">Eligible Locations</h6>
             </div>
             <div class="k-card-body">
                 <div class="k-card-text mb-0 h5" style="padding: 10px;" id="dbLocationsSub">@(string.Join(" | ", Model.EligibleLocations.Datacenters.Select(x => x.Location)))</div>
@@ -110,9 +110,10 @@
                                 @Html.Kendo().DropDownList().Name("requestServiceId3").BindTo(Model.DbUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
                                 @Html.Kendo().Button().Name("Reset").Content("Reset").HtmlAttributes(new {@class = "k-primary"})
                             }<br/>
-                            <h6 id="dbDownload">Download Database Backup</h6>
+                            <h6 id="dbBackupManagement">Database Backup Management</h6>
                             @Html.Kendo().DropDownList().Name("backupServiceId").BindTo(Model.DbUsernames).HtmlAttributes(new {style = "margin: 10px", @class = "k-primary"})
-                            @Html.Kendo().Button().Name("Download").Content("Download").Events(x => x.Click("onDownload")).HtmlAttributes(new {@class = "k-primary"})
+                            @Html.Kendo().Button().Name("Download").Content("Download").Events(x => x.Click("onDownload")).HtmlAttributes(new {style = "margin-right: 10px", @class = "k-primary"})
+                            @Html.Kendo().Button().Name("Restore").Content("Restore").Events(x => x.Click("onRestore")).HtmlAttributes(new {@class = "k-primary"})
                         }
                     </div>
                 </div>
@@ -121,9 +122,47 @@
     </div>
 </div>
 <script>
+
+    $(document).ready(function() {
+       $(".k-button.k-upload-button").css("display", "none !important");
+    });
+
     function onDownload() {
         var serviceId = $("#backupServiceId").val();
         var url = '@Url.Action("BackupDatabase", "MySql")';
         window.location.replace(url + "?backupServiceId=" + serviceId);
+    }
+    
+    function onRestore() {
+        var serviceId = $("#backupServiceId").val();
+        var uploadDialog = $('<div />').kendoDialog({ title: "Upload .SQL File", content: "<input name='files' id='files' type='file'/>", closable: true, actions: [{ text: 'Finish', primary: true }], close: onDialogClose}).data('kendoDialog').open();
+        var upload = $("#files").kendoUpload({ async: {saveUrl: '@Url.Action("RestoreDatabase", "MySql")' + "?backupServiceId=" + serviceId, autoUpload: false }, localization: { uploadSelectedFiles: 'Restore .SQL', cancel: 'Remove', uploadSuccess: '.SQL file restored successfully!', uploadFail: '.SQL file restore failed, see web console (F12) for details!' }, multiple: false, upload: onUpload, select: submitUpload });
+        
+        function onUpload(e) { 
+            var files = e.files;
+            $.each(files, function () { 
+                if(files.length > 1) {
+                    alert("Only one .sql file can be uploaded!")
+                    upload.data("kendoUpload").disable();
+                    e.preventDefault();
+                }
+            });
+        }
+        
+        function submitUpload(e) {     
+            var files = e.files;
+            $.each(files, function () { 
+                if (this.extension.toLowerCase() != ".sql") {
+                    alert("Only .sql files can be uploaded!")
+                    e.preventDefault();
+                }
+            });
+        }
+        
+        function onDialogClose() {
+          var elem = document.getElementById('files'); 
+          elem.parentNode.removeChild(elem);
+        }
+
     }
 </script>
