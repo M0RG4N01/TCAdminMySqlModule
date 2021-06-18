@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;using System.Web;
 using System.Web.Mvc;
+using ExtensionMethods;
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using MySql.Data.MySqlClient;
@@ -11,6 +12,17 @@ using MySqlModule.Models.MySql;
 using TCAdmin.SDK.Objects;
 using TCAdmin.SDK.Web.MVC.Controllers;
 using Service = TCAdmin.GameHosting.SDK.Objects.Service;
+
+namespace ExtensionMethods
+{
+    public static class ModuleExtensions
+    {
+        public static int GetDatabaseCount(this TCAdmin.GameHosting.SDK.Objects.Service service)
+        {
+            return service.Variables.Keys.Where(k => k.StartsWith("_MySQLPlugin::Database")).Count();
+        }
+    }
+}
 
 namespace MySqlModule.Controllers
 {
@@ -23,7 +35,7 @@ namespace MySqlModule.Controllers
             var model = new MySqlModel
             {
                 CurrentDatabases = GetUserDatabases().Count,
-                MaxDatabases = GetUserServices().Count,
+                MaxDatabases = GetUserServices().Count * int.Parse(TCAdmin.SDK.Utility.GetDatabaseValue("MySQLPlugin.DbPerService", "1")),
                 CreationServiceIds = GetUnusedUserServices(),
                 EligibleLocations = GetLocations(),
                 CreationUsername = GetDbUsername(),
@@ -50,7 +62,7 @@ namespace MySqlModule.Controllers
 
         public ActionResult CreateDatabase(int creationServiceId, string requestDbName)
         {
-            if (GetUserDatabases().Count >= GetUserServices().Count)
+            if (GetUserDatabases().Count >= GetUserServices().Count * int.Parse(TCAdmin.SDK.Utility.GetDatabaseValue("MySQLPlugin.DbPerService", "1")))
             {
                 return JavaScript(
                     "TCAdmin.Ajax.ShowBasicDialog('Error', 'You have reached your database limit!');$('body').css('cursor', 'default');");
@@ -121,7 +133,7 @@ namespace MySqlModule.Controllers
                                 var cmd = createDb.CreateCommand();
                                 var createDbSql = string.Concat(
                                     "CREATE DATABASE " + dbName + ";"
-                                    , "CREATE USER '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
+                                    , "CREATE USER IF NOT EXISTS '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
                                     , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
                                 cmd.CommandText = createDbSql;
                                 cmd.ExecuteNonQuery();
@@ -129,10 +141,18 @@ namespace MySqlModule.Controllers
                             }
                         }
 
-                        service.Variables["_MySQLPlugin::Host"] = datacenter.MySqlPluginIp;
-                        service.Variables["_MySQLPlugin::Username"] = dbUser;
-                        service.Variables["_MySQLPlugin::Password"] = dbPass;
-                        service.Variables["_MySQLPlugin::Database"] = dbName;
+                        var dbcount = service.GetDatabaseCount();
+                        if (dbcount == 0)
+                        {
+                            service.Variables["_MySQLPlugin::Host"] = datacenter.MySqlPluginIp;
+                            service.Variables["_MySQLPlugin::Username"] = dbUser;
+                            service.Variables["_MySQLPlugin::Password"] = dbPass;
+                            service.Variables["_MySQLPlugin::Database"] = dbName;
+                        }
+                        else
+                        {
+                            service.Variables[string.Format("_MySQLPlugin::Database{0}", dbcount)] = dbName;
+                        }
                     }
                     catch (Exception e)
                     {
@@ -168,7 +188,7 @@ namespace MySqlModule.Controllers
                                 var cmd = createDb.CreateCommand();
                                 var createDbSql = string.Concat(
                                     "CREATE DATABASE " + dbName + ";"
-                                    , "CREATE USER '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
+                                    , "CREATE USER IF NOT EXISTS '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
                                     , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
                                 cmd.CommandText = createDbSql;
                                 cmd.ExecuteNonQuery();
@@ -176,10 +196,18 @@ namespace MySqlModule.Controllers
                             }
                         }
 
-                        service.Variables["_MySQLPlugin::Host"] = server.MySqlPluginIp;
-                        service.Variables["_MySQLPlugin::Username"] = dbUser;
-                        service.Variables["_MySQLPlugin::Password"] = dbPass;
-                        service.Variables["_MySQLPlugin::Database"] = dbName;
+                        var dbcount = service.GetDatabaseCount();
+                        if (dbcount == 0)
+                        {
+                            service.Variables["_MySQLPlugin::Host"] = server.MySqlPluginIp;
+                            service.Variables["_MySQLPlugin::Username"] = dbUser;
+                            service.Variables["_MySQLPlugin::Password"] = dbPass;
+                            service.Variables["_MySQLPlugin::Database"] = dbName;
+                        }
+                        else
+                        {
+                            service.Variables[string.Format("_MySQLPlugin::Database{0}", dbcount)] = dbName;
+                        }
                     }
                     catch (Exception e)
                     {
@@ -203,7 +231,7 @@ namespace MySqlModule.Controllers
             return JavaScript("window.location.reload(false);");
         }
 
-        public ActionResult DeleteDatabase(int manageServiceId)
+        public ActionResult DeleteDatabase(int manageServiceId, string dbName)
         {
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false).Cast<Service>().ToList();
@@ -221,7 +249,19 @@ namespace MySqlModule.Controllers
                 var server = new Server(service.ServerId);
                 var datacenter = new Datacenter(server.DatacenterId);
                 var dbUser = service.Variables["_MySQLPlugin::Username"].ToString();
-                var dbName = service.Variables["_MySQLPlugin::Database"].ToString();
+                var dbcount = service.GetDatabaseCount();
+                var alldb = new List<string>();
+                for (int i = 0; i < dbcount; i++)
+                {
+                    alldb.Add(service.Variables[string.Format("_MySQLPlugin::Database{0}", i == 0 ? string.Empty : i.ToString())].ToString());
+                }
+
+                //Make sure database belongs to this user
+                if (alldb.SingleOrDefault(db => db == dbName) == null)
+                {
+                    return JavaScript(
+                        "TCAdmin.Ajax.ShowBasicDialog('Error', 'You don't own this database');$('body').css('cursor', 'default');");
+                }
 
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
@@ -233,16 +273,28 @@ namespace MySqlModule.Controllers
                         deleteDb.Open();
                         var cmd = deleteDb.CreateCommand();
                         var deleteDbSql = string.Concat(
-                            "DROP USER `" + dbUser + "`@'%';"
+                           dbcount == 1 ? "DROP USER IF EXISTS `" + dbUser + "`@'%';" : string.Empty
                             , " DROP DATABASE IF EXISTS `" + dbName + "`;");
                         cmd.CommandText = deleteDbSql;
                         cmd.ExecuteNonQuery();
                         deleteDb.Close();
 
-                        service.Variables["_MySQLPlugin::Host"] = null;
-                        service.Variables["_MySQLPlugin::Username"] = null;
-                        service.Variables["_MySQLPlugin::Password"] = null;
-                        service.Variables["_MySQLPlugin::Database"] = null;
+                        if (dbcount == 1)
+                        {
+                            service.Variables["_MySQLPlugin::Host"] = null;
+                            service.Variables["_MySQLPlugin::Username"] = null;
+                            service.Variables["_MySQLPlugin::Password"] = null;
+                            service.Variables["_MySQLPlugin::Database"] = null;
+                        }
+                        else
+                        {
+                            alldb.Remove(dbName);
+                            service.Variables.RemoveValue("_MySQLPlugin::Database" + (dbcount - 1).ToString());
+                            for (int i = 0; i < alldb.Count; i++)
+                            {
+                                service.Variables["_MySQLPlugin::Database" + (i == 0 ? string.Empty : i.ToString())] = alldb[i];
+                            }
+                        }
                     }
                     catch (Exception e)
                     {
@@ -260,16 +312,28 @@ namespace MySqlModule.Controllers
                         deleteDb.Open();
                         var cmd = deleteDb.CreateCommand();
                         var deleteDbSql = string.Concat(
-                            "DROP USER " + dbUser + "@`%`;"
+                            dbcount == 1 ? "DROP USER IF EXISTS `" + dbUser + "`@'%';" : string.Empty
                             , " DROP DATABASE IF EXISTS `" + dbName + "`;");
                         cmd.CommandText = deleteDbSql;
                         cmd.ExecuteNonQuery();
                         deleteDb.Close();
 
-                        service.Variables["_MySQLPlugin::Host"] = null;
-                        service.Variables["_MySQLPlugin::Username"] = null;
-                        service.Variables["_MySQLPlugin::Password"] = null;
-                        service.Variables["_MySQLPlugin::Database"] = null;
+                        if (dbcount == 1)
+                        {
+                            service.Variables["_MySQLPlugin::Host"] = null;
+                            service.Variables["_MySQLPlugin::Username"] = null;
+                            service.Variables["_MySQLPlugin::Password"] = null;
+                            service.Variables["_MySQLPlugin::Database"] = null;
+                        }
+                        else
+                        {
+                            alldb.Remove(dbName);
+                            service.Variables.RemoveValue("_MySQLPlugin::Database" + (dbcount - 1).ToString());
+                            for (int i = 0; i < alldb.Count; i++)
+                            {
+                                service.Variables["_MySQLPlugin::Database" + (i == 0 ? string.Empty : i.ToString())] = alldb[i];
+                            }
+                        }
                     }
                     catch (Exception e)
                     {
@@ -302,45 +366,65 @@ namespace MySqlModule.Controllers
                 {
                     return;
                 }
-                
+                var dbcount = service.GetDatabaseCount();
                 var dbUser = service.Variables["_MySQLPlugin::Username"].ToString();
-                var dbName = service.Variables["_MySQLPlugin::Database"].ToString();
 
-                if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
+                for (int i = dbcount - 1; i >= 0; i--)
                 {
-                    var deleteDb = new MySqlConnection("server=" + datacenter.MySqlPluginIp + ";user=" +
-                                                       datacenter.MySqlPluginRoot + ";password=" +
-                                                       datacenter.MySqlPluginPassword + ";");
-                    deleteDb.Open();
-                    var cmd = deleteDb.CreateCommand();
-                    var deleteDbSql = string.Concat(
-                        "DROP USER " + dbUser + "@`%`;"
-                        , " DROP DATABASE IF EXISTS `" + dbName + "`;");
-                    cmd.CommandText = deleteDbSql;
-                    cmd.ExecuteNonQuery();
-                    deleteDb.Close();
-                    service.Variables["_MySQLPlugin::Host"] = null;
-                    service.Variables["_MySQLPlugin::Username"] = null;
-                    service.Variables["_MySQLPlugin::Password"] = null;
-                    service.Variables["_MySQLPlugin::Database"] = null;
-                }
-                else if (!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
-                {
-                    var deleteDb = new MySqlConnection("server=" + server.MySqlPluginIp + ";user=" +
-                                                       server.MySqlPluginRoot + ";password=" +
-                                                       server.MySqlPluginPassword + ";");
-                    deleteDb.Open();
-                    var cmd = deleteDb.CreateCommand();
-                    var deleteDbSql = string.Concat(
-                        "DROP USER " + dbUser + "@`%`;"
-                        , " DROP DATABASE IF EXISTS `" + dbName + "`;");
-                    cmd.CommandText = deleteDbSql;
-                    cmd.ExecuteNonQuery();
-                    deleteDb.Close();
-                    service.Variables["_MySQLPlugin::Host"] = null;
-                    service.Variables["_MySQLPlugin::Username"] = null;
-                    service.Variables["_MySQLPlugin::Password"] = null;
-                    service.Variables["_MySQLPlugin::Database"] = null;
+                    var dbName = service.Variables["_MySQLPlugin::Database" + (i == 0 ? string.Empty : i.ToString())].ToString();
+
+                    if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
+                    {
+                        var deleteDb = new MySqlConnection("server=" + datacenter.MySqlPluginIp + ";user=" +
+                                                           datacenter.MySqlPluginRoot + ";password=" +
+                                                           datacenter.MySqlPluginPassword + ";");
+                        deleteDb.Open();
+                        var cmd = deleteDb.CreateCommand();
+                        var deleteDbSql = string.Concat(
+                            "DROP USER IF EXISTS " + dbUser + "@`%`;"
+                            , " DROP DATABASE IF EXISTS `" + dbName + "`;");
+                        cmd.CommandText = deleteDbSql;
+                        cmd.ExecuteNonQuery();
+                        deleteDb.Close();
+
+                        if (i == 0)
+                        {
+                            service.Variables["_MySQLPlugin::Host"] = null;
+                            service.Variables["_MySQLPlugin::Username"] = null;
+                            service.Variables["_MySQLPlugin::Password"] = null;
+                            service.Variables["_MySQLPlugin::Database"] = null;
+                        }
+                        else
+                        {
+                            service.Variables["_MySQLPlugin::Database" + (i == 0 ? string.Empty : i.ToString())] = null;
+                        }
+                    }
+                    else if (!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
+                    {
+                        var deleteDb = new MySqlConnection("server=" + server.MySqlPluginIp + ";user=" +
+                                                           server.MySqlPluginRoot + ";password=" +
+                                                           server.MySqlPluginPassword + ";");
+                        deleteDb.Open();
+                        var cmd = deleteDb.CreateCommand();
+                        var deleteDbSql = string.Concat(
+                            "DROP USER IF EXISTS " + dbUser + "@`%`;"
+                            , " DROP DATABASE IF EXISTS `" + dbName + "`;");
+                        cmd.CommandText = deleteDbSql;
+                        cmd.ExecuteNonQuery();
+                        deleteDb.Close();
+
+                        if (i == 0)
+                        {
+                            service.Variables["_MySQLPlugin::Host"] = null;
+                            service.Variables["_MySQLPlugin::Username"] = null;
+                            service.Variables["_MySQLPlugin::Password"] = null;
+                            service.Variables["_MySQLPlugin::Database"] = null;
+                        }
+                        else
+                        {
+                            service.Variables["_MySQLPlugin::Database" + (i == 0 ? string.Empty : i.ToString())] = null;
+                        }
+                    }
                 }
 
                 service.Save();
@@ -490,7 +574,7 @@ namespace MySqlModule.Controllers
             return JavaScript("window.location.reload(false);");
         }
 
-        public ActionResult BackupDatabase(int backupServiceId)
+        public ActionResult BackupDatabase(int backupServiceId, string dbName)
         {
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false).Cast<Service>().ToList();
@@ -507,8 +591,20 @@ namespace MySqlModule.Controllers
                 ObjectBase.GlobalSkipSecurityCheck = true;
                 var server = new Server(service.ServerId);
                 var datacenter = new Datacenter(server.DatacenterId);
-                var dbName = service.Variables["_MySQLPlugin::Database"].ToString();
                 var memory = new MemoryStream();
+                var dbcount = service.GetDatabaseCount();
+                var alldb = new List<string>();
+                for (int i = 0; i < dbcount; i++)
+                {
+                    alldb.Add(service.Variables[string.Format("_MySQLPlugin::Database{0}", i == 0 ? string.Empty : i.ToString())].ToString());
+                }
+
+                //Make sure database belongs to this user
+                if (alldb.SingleOrDefault(db => db == dbName) == null)
+                {
+                    return JavaScript(
+                        "TCAdmin.Ajax.ShowBasicDialog('Error', 'You don't own this database');$('body').css('cursor', 'default');");
+                }
 
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
@@ -605,7 +701,7 @@ namespace MySqlModule.Controllers
                 var model = new MySqlModel
                 {
                     CurrentDatabases = GetUserDatabases().Count,
-                    MaxDatabases = GetUserServices().Count,
+                    MaxDatabases = GetUserServices().Count * int.Parse(TCAdmin.SDK.Utility.GetDatabaseValue("MySQLPlugin.DbPerService", "1")),
                     CreationServiceIds = GetUnusedUserServices(),
                     EligibleLocations = GetLocations(),
                     CreationUsername = GetDbUsername(),
@@ -621,7 +717,7 @@ namespace MySqlModule.Controllers
             }
         }
         
-        public ActionResult RestoreDatabase(IEnumerable<HttpPostedFileBase> files, int backupServiceId)
+        public ActionResult RestoreDatabase(IEnumerable<HttpPostedFileBase> files, int backupServiceId, string dbName)
         {
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false).Cast<Service>().ToList();
@@ -646,8 +742,21 @@ namespace MySqlModule.Controllers
                 var datacenter = new Datacenter(server.DatacenterId);
                 var dbUser = service.Variables["_MySQLPlugin::Username"].ToString();
                 var dbPass = service.Variables["_MySQLPlugin::Password"].ToString();
-                var dbName = service.Variables["_MySQLPlugin::Database"].ToString();
                 var file = files.FirstOrDefault();
+                var dbcount = service.GetDatabaseCount();
+                var alldb = new List<string>();
+                for (int i = 0; i < dbcount; i++)
+                {
+                    alldb.Add(service.Variables[string.Format("_MySQLPlugin::Database{0}", i == 0 ? string.Empty : i.ToString())].ToString());
+                }
+
+                //Make sure database belongs to this user
+                if (alldb.SingleOrDefault(db => db == dbName) == null)
+                {
+                    return Content(
+                        "\n\nError: Uh oh, something went wrong! \n\nDetails: \nYou don't own this database!");
+                }
+
                 file.InputStream.Position = 0;
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
@@ -705,103 +814,106 @@ namespace MySqlModule.Controllers
                     return;
                 }
 
-                var dbName = service.Variables["_MySQLPlugin::Database"].ToString();
-
-                if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
+                var dbcount = service.GetDatabaseCount();
+                for (int i = 0; i < dbcount; i++)
                 {
+                    var dbName = service.Variables["_MySQLPlugin::Database" + (i==0?string.Empty:i.ToString())].ToString();
 
-                    using (MySqlConnection backupDb = new MySqlConnection(
-                        "server=" + datacenter.MySqlPluginIp + ";user=" +
-                        datacenter.MySqlPluginRoot + ";password=" +
-                        datacenter.MySqlPluginPassword + ";database=" + dbName + ";"))
-                    {
-                        backupDb.Open();
-                        var cmd = backupDb.CreateCommand();
-                        var sqlBackup = new MySqlBackup(cmd);
-                        var alterDbSql = $"ALTER DATABASE `{dbName}` COLLATE latin1_swedish_ci;";
-                        cmd.CommandText = alterDbSql;
-                        cmd.ExecuteNonQuery();
-
-                        const string tables = "SHOW TABLES;";
-                        using (MySqlCommand tableCmd = new MySqlCommand(tables, backupDb))
-                        {
-                            var tableList = new List<string>();
-
-                            using (MySqlDataReader reader = tableCmd.ExecuteReader())
-                            {
-                                if (reader != null)
-                                {
-                                    while (reader.Read())
-                                    {
-                                        tableList.Add(reader[$"Tables_in_{dbName}"].ToString());
-                                    }
-                                }
-                            }
-                            
-                            foreach (var table in tableList)
-                            {
-                                var alterDbtable =
-                                    $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
-                                tableCmd.CommandText = alterDbtable;
-                                tableCmd.ExecuteNonQuery();
-                            }
-                        }
-
-                        Console.WriteLine(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
-                        sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
-                        backupDb.Close();
-                    }
-
-                    DeleteDatabase(service);
-                }
-                else if (!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
-                {
-
-                    using (MySqlConnection backupDb = new MySqlConnection("server=" + server.MySqlPluginIp + ";user=" +
-                                                                          server.MySqlPluginRoot + ";password=" +
-                                                                          server.MySqlPluginPassword + ";database=" +
-                                                                          dbName + ";"))
+                    if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                     {
 
-                        var cmd = backupDb.CreateCommand();
-                        var sqlBackup = new MySqlBackup(cmd);
-                        backupDb.Open();
-                        var alterDbSql = $"ALTER DATABASE `{dbName}` COLLATE latin1_swedish_ci;";
-                        cmd.CommandText = alterDbSql;
-                        cmd.ExecuteNonQuery();
-
-                        const string tables = "SHOW TABLES;";
-                        using (MySqlCommand tableCmd = new MySqlCommand(tables, backupDb))
+                        using (MySqlConnection backupDb = new MySqlConnection(
+                            "server=" + datacenter.MySqlPluginIp + ";user=" +
+                            datacenter.MySqlPluginRoot + ";password=" +
+                            datacenter.MySqlPluginPassword + ";database=" + dbName + ";"))
                         {
-                            var tableList = new List<string>();
+                            backupDb.Open();
+                            var cmd = backupDb.CreateCommand();
+                            var sqlBackup = new MySqlBackup(cmd);
+                            var alterDbSql = $"ALTER DATABASE `{dbName}` COLLATE latin1_swedish_ci;";
+                            cmd.CommandText = alterDbSql;
+                            cmd.ExecuteNonQuery();
 
-                            using (MySqlDataReader reader = tableCmd.ExecuteReader())
+                            const string tables = "SHOW TABLES;";
+                            using (MySqlCommand tableCmd = new MySqlCommand(tables, backupDb))
                             {
-                                if (reader != null)
+                                var tableList = new List<string>();
+
+                                using (MySqlDataReader reader = tableCmd.ExecuteReader())
                                 {
-                                    while (reader.Read())
+                                    if (reader != null)
                                     {
-                                        tableList.Add(reader[$"Tables_in_{dbName}"].ToString());
+                                        while (reader.Read())
+                                        {
+                                            tableList.Add(reader[$"Tables_in_{dbName}"].ToString());
+                                        }
                                     }
                                 }
+
+                                foreach (var table in tableList)
+                                {
+                                    var alterDbtable =
+                                        $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                    tableCmd.CommandText = alterDbtable;
+                                    tableCmd.ExecuteNonQuery();
+                                }
                             }
-                            
-                            foreach (var table in tableList)
-                            {
-                                var alterDbtable =
-                                    $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
-                                tableCmd.CommandText = alterDbtable;
-                                tableCmd.ExecuteNonQuery();
-                            }
+
+                            Console.WriteLine(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
+                            sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
+                            backupDb.Close();
                         }
 
-                        Console.WriteLine(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
-                        sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
-                        backupDb.Close();
                     }
+                    else if (!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
+                    {
 
-                    DeleteDatabase(service);
+                        using (MySqlConnection backupDb = new MySqlConnection("server=" + server.MySqlPluginIp + ";user=" +
+                                                                              server.MySqlPluginRoot + ";password=" +
+                                                                              server.MySqlPluginPassword + ";database=" +
+                                                                              dbName + ";"))
+                        {
+
+                            var cmd = backupDb.CreateCommand();
+                            var sqlBackup = new MySqlBackup(cmd);
+                            backupDb.Open();
+                            var alterDbSql = $"ALTER DATABASE `{dbName}` COLLATE latin1_swedish_ci;";
+                            cmd.CommandText = alterDbSql;
+                            cmd.ExecuteNonQuery();
+
+                            const string tables = "SHOW TABLES;";
+                            using (MySqlCommand tableCmd = new MySqlCommand(tables, backupDb))
+                            {
+                                var tableList = new List<string>();
+
+                                using (MySqlDataReader reader = tableCmd.ExecuteReader())
+                                {
+                                    if (reader != null)
+                                    {
+                                        while (reader.Read())
+                                        {
+                                            tableList.Add(reader[$"Tables_in_{dbName}"].ToString());
+                                        }
+                                    }
+                                }
+
+                                foreach (var table in tableList)
+                                {
+                                    var alterDbtable =
+                                        $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                    tableCmd.CommandText = alterDbtable;
+                                    tableCmd.ExecuteNonQuery();
+                                }
+                            }
+
+                            Console.WriteLine(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
+                            sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
+                            backupDb.Close();
+                        }
+                    }
                 }
+
+                DeleteDatabase(service);
 
                 service.Save();
             }
@@ -826,120 +938,136 @@ namespace MySqlModule.Controllers
                 {
                     return;
                 }
-                
-                var dbUser = $"{service.UserName}_{service.ServiceId}";
-                var dbName = Path.GetFileNameWithoutExtension(files[0].Name);
-                var dbPass = TCAdmin.SDK.Misc.Random.RandomPassword(12, 2, 2, 1, "!");
-
-                if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
+                for (int i = 0; i < files.Length; i++)
                 {
-                    using (MySqlConnection restoreDb = new MySqlConnection("server=" + datacenter.MySqlPluginIp + ";user=" +
-                                                             datacenter.MySqlPluginRoot + ";password=" +
-                                                             datacenter.MySqlPluginPassword + ";"))
+                    var dbUser = $"{service.UserName}_{service.ServiceId}";
+                    var dbName = Path.GetFileNameWithoutExtension(files[i].Name);
+                    var dbPass = TCAdmin.SDK.Misc.Random.RandomPassword(12, 2, 2, 1, "!");
+
+                    if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                     {
-                        var cmd = restoreDb.CreateCommand();
-                        restoreDb.Open();
-                        if (restoreDb.ServerVersion != null)
-                        {
-                            var sqlVer = Regex.Match(restoreDb.ServerVersion, @"\d+").Value;
-                            if (Convert.ToInt32(sqlVer) < 8)
-                            {
-                                var restoreDbSql = string.Concat(
-                                    "CREATE DATABASE " + dbName + ";"
-                                    , "GRANT USAGE on *.* to '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
-                                    , "GRANT ALL PRIVILEGES ON " + dbName + ".* to '" + dbUser + "'@'%';");
-                                cmd.CommandText = restoreDbSql;
-                                cmd.ExecuteNonQuery();
-                                restoreDb.Close();
-                            }
-                            else
-                            {
-                                var restoreDbSql = string.Concat(
-                                    "CREATE DATABASE " + dbName + ";"
-                                    , "CREATE USER '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
-                                    , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
-                                cmd.CommandText = restoreDbSql;
-                                cmd.ExecuteNonQuery();
-                                restoreDb.Close();
-                            }
-                        }
-
-                        service.Variables["_MySQLPlugin::Host"] = datacenter.MySqlPluginIp;
-                        service.Variables["_MySQLPlugin::Username"] = dbUser;
-                        service.Variables["_MySQLPlugin::Password"] = dbPass;
-                        service.Variables["_MySQLPlugin::Database"] = dbName;
-                    }
-
-                    using (MySqlConnection restoreDb2 = new MySqlConnection("server=" + datacenter.MySqlPluginIp + ";user=" +
+                        using (MySqlConnection restoreDb = new MySqlConnection("server=" + datacenter.MySqlPluginIp + ";user=" +
                                                                  datacenter.MySqlPluginRoot + ";password=" +
-                                                                 datacenter.MySqlPluginPassword + ";database=" +
-                                                                 dbName +
-                                                                 ";"))
-                    {
-                        var cmd2 = restoreDb2.CreateCommand();
-                        var sqlRestore = new MySqlBackup(cmd2);
-                        restoreDb2.Open();
-                        sqlRestore.ImportFromFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
-                        restoreDb2.Close();
-                    }
-
-                }
-                else if (!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
-                {
-                    using (MySqlConnection restoreDb = new MySqlConnection("server=" + server.MySqlPluginIp + ";user=" +
-                                                                           server.MySqlPluginRoot + ";password=" +
-                                                                           server.MySqlPluginPassword + ";"))
-                    {
-
-                        restoreDb.Open();
-                        if (restoreDb.ServerVersion != null)
+                                                                 datacenter.MySqlPluginPassword + ";"))
                         {
-                            var sqlVer = Regex.Match(restoreDb.ServerVersion, @"\d+").Value;
-                            if (Convert.ToInt32(sqlVer) < 8)
+                            var cmd = restoreDb.CreateCommand();
+                            restoreDb.Open();
+                            if (restoreDb.ServerVersion != null)
                             {
-                                var cmd = restoreDb.CreateCommand();
-                                var restoreDbSql = string.Concat(
-                                    "CREATE DATABASE " + dbName + ";"
-                                    , "GRANT USAGE on *.* to '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
-                                    , "GRANT ALL PRIVILEGES ON " + dbName + ".* to '" + dbUser + "'@'%';");
-                                cmd.CommandText = restoreDbSql;
-                                cmd.ExecuteNonQuery();
-                                restoreDb.Close();
+                                var sqlVer = Regex.Match(restoreDb.ServerVersion, @"\d+").Value;
+                                if (Convert.ToInt32(sqlVer) < 8)
+                                {
+                                    var restoreDbSql = string.Concat(
+                                        "CREATE DATABASE " + dbName + ";"
+                                        , "GRANT USAGE on *.* to '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
+                                        , "GRANT ALL PRIVILEGES ON " + dbName + ".* to '" + dbUser + "'@'%';");
+                                    cmd.CommandText = restoreDbSql;
+                                    cmd.ExecuteNonQuery();
+                                    restoreDb.Close();
+                                }
+                                else
+                                {
+                                    var restoreDbSql = string.Concat(
+                                        "CREATE DATABASE " + dbName + ";"
+                                        , "CREATE USER IF NOT EXISTS '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
+                                        , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
+                                    cmd.CommandText = restoreDbSql;
+                                    cmd.ExecuteNonQuery();
+                                    restoreDb.Close();
+                                }
+                            }
+
+                            if (i == 0)
+                            {
+                                service.Variables["_MySQLPlugin::Host"] = datacenter.MySqlPluginIp;
+                                service.Variables["_MySQLPlugin::Username"] = dbUser;
+                                service.Variables["_MySQLPlugin::Password"] = dbPass;
+                                service.Variables["_MySQLPlugin::Database"] = dbName;
                             }
                             else
                             {
-                                var cmd = restoreDb.CreateCommand();
-                                var restoreDbSql = string.Concat(
-                                    "CREATE DATABASE " + dbName + ";"
-                                    , "CREATE USER '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
-                                    , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
-                                cmd.CommandText = restoreDbSql;
-                                cmd.ExecuteNonQuery();
-                                restoreDb.Close();
+                                service.Variables["_MySQLPlugin::Database" + i.ToString()] = dbName;
                             }
                         }
 
-                        service.Variables["_MySQLPlugin::Host"] = server.MySqlPluginIp;
-                        service.Variables["_MySQLPlugin::Username"] = dbUser;
-                        service.Variables["_MySQLPlugin::Password"] = dbPass;
-                        service.Variables["_MySQLPlugin::Database"] = dbName;
-                    }
+                        using (MySqlConnection restoreDb2 = new MySqlConnection("server=" + datacenter.MySqlPluginIp + ";user=" +
+                                                                     datacenter.MySqlPluginRoot + ";password=" +
+                                                                     datacenter.MySqlPluginPassword + ";database=" +
+                                                                     dbName +
+                                                                     ";"))
+                        {
+                            var cmd2 = restoreDb2.CreateCommand();
+                            var sqlRestore = new MySqlBackup(cmd2);
+                            restoreDb2.Open();
+                            sqlRestore.ImportFromFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
+                            restoreDb2.Close();
+                        }
 
-                    using (MySqlConnection restoreDb2 = new MySqlConnection(
-                        "server=" + server.MySqlPluginIp + ";user=" +
-                        server.MySqlPluginRoot + ";password=" +
-                        server.MySqlPluginPassword + ";database=" + dbName + ";"))
+                    }
+                    else if (!server.MySqlPluginUseDatacenter && server.MySqlPluginIp != string.Empty)
                     {
+                        using (MySqlConnection restoreDb = new MySqlConnection("server=" + server.MySqlPluginIp + ";user=" +
+                                                                               server.MySqlPluginRoot + ";password=" +
+                                                                               server.MySqlPluginPassword + ";"))
+                        {
 
-                        var cmd2 = restoreDb2.CreateCommand();
-                        var sqlRestore = new MySqlBackup(cmd2);
-                        restoreDb2.Open();
-                        sqlRestore.ImportFromFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
-                        restoreDb2.Close();
+                            restoreDb.Open();
+                            if (restoreDb.ServerVersion != null)
+                            {
+                                var sqlVer = Regex.Match(restoreDb.ServerVersion, @"\d+").Value;
+                                if (Convert.ToInt32(sqlVer) < 8)
+                                {
+                                    var cmd = restoreDb.CreateCommand();
+                                    var restoreDbSql = string.Concat(
+                                        "CREATE DATABASE " + dbName + ";"
+                                        , "GRANT USAGE on *.* to '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
+                                        , "GRANT ALL PRIVILEGES ON " + dbName + ".* to '" + dbUser + "'@'%';");
+                                    cmd.CommandText = restoreDbSql;
+                                    cmd.ExecuteNonQuery();
+                                    restoreDb.Close();
+                                }
+                                else
+                                {
+                                    var cmd = restoreDb.CreateCommand();
+                                    var restoreDbSql = string.Concat(
+                                        "CREATE DATABASE " + dbName + ";"
+                                        , "CREATE USER IF NOT EXISTS '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
+                                        , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
+                                    cmd.CommandText = restoreDbSql;
+                                    cmd.ExecuteNonQuery();
+                                    restoreDb.Close();
+                                }
+                            }
+
+                            if (i == 0)
+                            {
+                                service.Variables["_MySQLPlugin::Host"] = server.MySqlPluginIp;
+                                service.Variables["_MySQLPlugin::Username"] = dbUser;
+                                service.Variables["_MySQLPlugin::Password"] = dbPass;
+                                service.Variables["_MySQLPlugin::Database"] = dbName;
+                            }
+                            else
+                            {
+                                service.Variables["_MySQLPlugin::Database" + i.ToString()] = dbName;
+                            }
+                        }
+
+                        using (MySqlConnection restoreDb2 = new MySqlConnection(
+                            "server=" + server.MySqlPluginIp + ";user=" +
+                            server.MySqlPluginRoot + ";password=" +
+                            server.MySqlPluginPassword + ";database=" + dbName + ";"))
+                        {
+
+                            var cmd2 = restoreDb2.CreateCommand();
+                            var sqlRestore = new MySqlBackup(cmd2);
+                            restoreDb2.Open();
+                            sqlRestore.ImportFromFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
+                            restoreDb2.Close();
+                        }
                     }
+
+                    System.IO.File.Delete(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, files[i].Name, server.OperatingSystem));
                 }
-                
-                System.IO.File.Delete(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, files[0].Name, server.OperatingSystem));
 
                 service.Save();
             }
@@ -958,15 +1086,31 @@ namespace MySqlModule.Controllers
 
         private static List<SelectListItem> GetExistingDbUsernames()
         {
+
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false)
                 .Cast<Service>().ToList();
 
-            return (from service in services
-                let usernameExists = service.Variables["_MySQLPlugin::Username"] != null
-                where usernameExists
-                let text = service.Variables["_MySQLPlugin::Database"].ToString()
-                select new SelectListItem {Text = text, Value = service.ServiceId.ToString()}).ToList();
+            var databases = new List<SelectListItem>();
+            foreach (var service in services.Where(s => s.Variables["_MySQLPlugin::Host"] != null))
+            {
+                for (int i = 0; i < service.GetDatabaseCount(); i++)
+                {
+                    databases.Add(new SelectListItem() { 
+                        Text= service.Variables[string.Format("_MySQLPlugin::Database{0}", i == 0 ? string.Empty : i.ToString())].ToString(),
+                        Value= service.ServiceId.ToString()
+                    });
+
+                }
+            }
+
+            return databases;
+
+            //return (from service in services
+            //    let usernameExists = service.Variables["_MySQLPlugin::Username"] != null
+            //    where usernameExists
+            //    let text = service.Variables["_MySQLPlugin::Database"].ToString()
+            //    select new SelectListItem {Text = text, Value = service.ServiceId.ToString()}).ToList();
         }
 
         private static List<MySqlGridViewModel> GetUserDatabases()
@@ -978,7 +1122,23 @@ namespace MySqlModule.Controllers
             try
             {
                 ObjectBase.GlobalSkipSecurityCheck = true;
-                return (from service in services where service.Variables["_MySQLPlugin::Host"] != null let mysqlHost = service.Variables["_MySQLPlugin::Host"].ToString() let mysqlUser = service.Variables["_MySQLPlugin::Username"].ToString() let mysqlPass = service.Variables["_MySQLPlugin::Password"].ToString() let mysqlDatabase = service.Variables["_MySQLPlugin::Database"].ToString() let datacenter = new Datacenter(new Server(service.ServerId).DatacenterId) let server = new Server(service.ServerId) let phpmyAdmin = server.MySqlPluginUseDatacenter ? datacenter.MySqlPluginPhpMyAdmin : server.MySqlPluginPhpMyAdmin select new MySqlGridViewModel(mysqlHost, mysqlDatabase, mysqlUser, mysqlPass, datacenter.Location, phpmyAdmin, service.ServiceId.ToString())).ToList();
+                
+                var databases = new List<MySqlGridViewModel>();
+                foreach(var service in services.Where(s=>s.Variables["_MySQLPlugin::Host"] != null))
+                {
+                    for (int i = 0; i < service.GetDatabaseCount(); i++)
+                    {
+                        var server = TCAdmin.SDK.Objects.Server.GetServerFromCache(service.ServerId);
+                        var datacenter = new TCAdmin.SDK.Objects.Datacenter(server.DatacenterId);
+                        var phpmyAdmin = server.MySqlPluginUseDatacenter ? datacenter.MySqlPluginPhpMyAdmin : server.MySqlPluginPhpMyAdmin;
+
+                        databases.Add(new MySqlGridViewModel(service.Variables["_MySQLPlugin::Host"].ToString(), service.Variables[string.Format("_MySQLPlugin::Database{0}", i == 0 ? string.Empty : i.ToString())].ToString(), service.Variables["_MySQLPlugin::Username"].ToString(), service.Variables["_MySQLPlugin::Password"].ToString(), datacenter.Location, phpmyAdmin, service.ServiceId.ToString()));
+
+                    }
+                }
+
+                return databases;
+                //return (from service in services where service.Variables["_MySQLPlugin::Host"] != null let mysqlHost = service.Variables["_MySQLPlugin::Host"].ToString() let mysqlUser = service.Variables["_MySQLPlugin::Username"].ToString() let mysqlPass = service.Variables["_MySQLPlugin::Password"].ToString() let mysqlDatabase = service.Variables["_MySQLPlugin::Database"].ToString() let datacenter = new Datacenter(new Server(service.ServerId).DatacenterId) let server = new Server(service.ServerId) let phpmyAdmin = server.MySqlPluginUseDatacenter ? datacenter.MySqlPluginPhpMyAdmin : server.MySqlPluginPhpMyAdmin select new MySqlGridViewModel(mysqlHost, mysqlDatabase, mysqlUser, mysqlPass, datacenter.Location, phpmyAdmin, service.ServiceId.ToString())).ToList();
             }
             finally
             {
@@ -1004,10 +1164,11 @@ namespace MySqlModule.Controllers
             var user = TCAdmin.SDK.Session.GetCurrentUser();
             var services = Service.GetServices(user, false)
                 .Cast<Service>().ToList();
+            var dbperservice = int.Parse(TCAdmin.SDK.Utility.GetDatabaseValue("MySQLPlugin.DbPerService", "1"));
 
             return (from service in services
-                    let usernameExists = service.Variables["_MySQLPlugin::Username"] != null
-                    where !usernameExists
+                    let reachedLimit = service.GetDatabaseCount() >= dbperservice
+                    where !reachedLimit
                     select new SelectListItem
                         {Text = service.ConnectionInfo + " - " + service.Name, Value = service.ServiceId.ToString()})
                 .ToList();
