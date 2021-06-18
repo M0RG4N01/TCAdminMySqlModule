@@ -1,4 +1,4 @@
-﻿@using System.Web.Mvc.Ajax
+@using System.Web.Mvc.Ajax
 @using System.Web.Mvc.Html
 @using Kendo.Mvc.UI
 @using TCAdmin.SDK.Web.MVC.Extensions
@@ -121,11 +121,13 @@
     });
                 
     function onDelete() {
-        var serviceId = $("#manageServiceId").val();
+        var dropdown = $("#manageServiceId").data("kendoDropDownList");
+        var serviceId = dropdown.value();
+        var database = dropdown.text();
         $.ajax({
             type: "POST",
             url: "/MySql/DeleteDatabase/",
-            data: JSON.stringify({manageServiceId: serviceId}),
+            data: JSON.stringify({ manageServiceId: serviceId, dbName: database}),
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             
@@ -151,15 +153,19 @@
     }  
     
     function onDownload() {
-        var serviceId = $("#backupServiceId").val();
+        var dropdown = $("#backupServiceId").data("kendoDropDownList");
+        var serviceId = dropdown.value();
+        var database = dropdown.text();
         var url = '@Url.Action("BackupDatabase", "MySql")';
-        window.location.replace(url + "?backupServiceId=" + serviceId);
+        window.location.replace(url + "?backupServiceId={0}&dbName={1}".format(serviceId, database));
     }
     
     function onRestore() {
-        var serviceId = $("#backupServiceId").val();
+        var dropdown = $("#backupServiceId").data("kendoDropDownList");
+        var serviceId = dropdown.value();
+        var database = dropdown.text();
         var uploadDialog = $('<div />').kendoDialog({ title: "Upload .SQL File", content: "<input name='files' id='files' type='file'/>", closable: true, actions: [{ text: 'Finish', primary: true }], close: onDialogClose}).data('kendoDialog').open();
-        var upload = $("#files").kendoUpload({ async: {saveUrl: '@Url.Action("RestoreDatabase", "MySql")' + "?backupServiceId=" + serviceId, autoUpload: false }, localization: { uploadSelectedFiles: 'Restore .SQL', cancel: 'Remove', uploadSuccess: '.SQL file restored successfully!', uploadFail: '.SQL file restore failed, see web console (F12) for details!' }, multiple: false, upload: onUpload, select: submitUpload });
+        var upload = $("#files").kendoUpload({ async: {saveUrl: '@Url.Action("RestoreDatabase", "MySql")' + "?backupServiceId={0}&dbName={1}".format(serviceId, database), autoUpload: false }, localization: { uploadSelectedFiles: 'Restore .SQL', cancel: 'Remove', uploadSuccess: '.SQL file restored successfully!', uploadFail: '.SQL file restore failed, see web console (F12) for details!' }, multiple: false, upload: onUpload, select: submitUpload });
         
         function onUpload(e) { 
             var files = e.files;
