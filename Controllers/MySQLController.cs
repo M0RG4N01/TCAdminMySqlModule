@@ -381,7 +381,7 @@ namespace MySqlModule.Controllers
                         deleteDb.Open();
                         var cmd = deleteDb.CreateCommand();
                         var deleteDbSql = string.Concat(
-                            "DROP USER IF EXISTS " + dbUser + "@`%`;"
+                            "DROP USER IF EXISTS `" + dbUser + "`@'%';"
                             , " DROP DATABASE IF EXISTS `" + dbName + "`;");
                         cmd.CommandText = deleteDbSql;
                         cmd.ExecuteNonQuery();
@@ -407,7 +407,7 @@ namespace MySqlModule.Controllers
                         deleteDb.Open();
                         var cmd = deleteDb.CreateCommand();
                         var deleteDbSql = string.Concat(
-                            "DROP USER IF EXISTS " + dbUser + "@`%`;"
+                            "DROP USER IF EXISTS `" + dbUser + "`@'%';"
                             , " DROP DATABASE IF EXISTS `" + dbName + "`;");
                         cmd.CommandText = deleteDbSql;
                         cmd.ExecuteNonQuery();
