@@ -105,7 +105,14 @@ namespace MySqlModule.Controllers
                 var dbUser = $"{user.UserName.Replace(" ", "_").Replace("-", "_").Replace(".", "_")}_{service.ServiceId}";
                 var dbName = $"{user.UserName}_{requestDbName.Replace(" ", "_")}";
                 var dbPass = TCAdmin.SDK.Misc.Random.RandomPassword(12, 2, 2, 1, "!");
-                
+                var dbcount = service.GetDatabaseCount();
+
+                //use the same password from previous db
+                if(dbcount > 0)
+                {
+                    dbPass = (string)service.Variables["_MySQLPlugin::Password"];
+                }
+
                 if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                 {
                     try
@@ -141,7 +148,6 @@ namespace MySqlModule.Controllers
                             }
                         }
 
-                        var dbcount = service.GetDatabaseCount();
                         if (dbcount == 0)
                         {
                             service.Variables["_MySQLPlugin::Host"] = datacenter.MySqlPluginIp;
@@ -196,7 +202,6 @@ namespace MySqlModule.Controllers
                             }
                         }
 
-                        var dbcount = service.GetDatabaseCount();
                         if (dbcount == 0)
                         {
                             service.Variables["_MySQLPlugin::Host"] = server.MySqlPluginIp;
