@@ -2,3 +2,6 @@ bin/
 obj/
 .idea/
 packages/
+/MySqlModule.sln
+*.suo
+/.vs
