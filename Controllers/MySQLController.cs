@@ -807,7 +807,7 @@ namespace MySqlModule.Controllers
             return new EmptyResult(); //Return empty result to signify success
         }
 
-        public static void BackupDatabaseOnMove(Service service)
+        public static void BackupDatabaseOnMove(Service service, TCAdmin.GameHosting.SDK.Automation.GameHostingMoveInfo moveinfo)
         {
             try
             {
@@ -864,7 +864,6 @@ namespace MySqlModule.Controllers
                                 }
                             }
 
-                            Console.WriteLine(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
                             sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
                             backupDb.Close();
                         }
@@ -911,14 +910,16 @@ namespace MySqlModule.Controllers
                                 }
                             }
 
-                            Console.WriteLine(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
                             sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
                             backupDb.Close();
                         }
                     }
                 }
 
-                DeleteDatabase(service);
+                if (moveinfo.DeleteOriginal)
+                {
+                    DeleteDatabase(service);
+                }
 
                 service.Save();
             }
@@ -929,7 +930,7 @@ namespace MySqlModule.Controllers
             }
         }
 
-        public static void RestoreDatabaseOnMove(Service service)
+        public static void RestoreDatabaseOnMove(Service service, TCAdmin.GameHosting.SDK.Automation.GameHostingMoveInfo moveinfo)
         {
             try
             {
