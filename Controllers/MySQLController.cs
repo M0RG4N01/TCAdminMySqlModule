@@ -103,7 +103,7 @@ namespace MySqlModule.Controllers
                 var server = new Server(service.ServerId);
                 var datacenter = new Datacenter(server.DatacenterId);
                 var dbUser = $"{user.UserName.Replace(" ", "_").Replace("-", "_").Replace(".", "_")}_{service.ServiceId}";
-                var dbName = $"{user.UserName}_{requestDbName.Replace(" ", "_")}";
+                var dbName = $"{user.UserName.Replace(" ", "_").Replace("-", "_").Replace(".", "_")}_{requestDbName.Replace(" ", "_")}";
                 var dbPass = TCAdmin.SDK.Misc.Random.RandomPassword(12, 2, 2, 1, "!");
                 var dbcount = service.GetDatabaseCount();
 
