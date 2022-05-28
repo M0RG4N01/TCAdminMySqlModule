@@ -24,10 +24,10 @@ namespace MySqlModule.Helpers
                     MySqlController.DeleteDatabase(thisService);
                     break;
                 case ServiceEvent.BeforeMove:
-                    MySqlController.BackupDatabaseOnMove(thisService);
+                    MySqlController.BackupDatabaseOnMove(thisService, (TCAdmin.GameHosting.SDK.Automation.GameHostingMoveInfo)((System.Collections.Generic.Dictionary<string, object>)args.Arguments[1])["ThisGameHostingMoveInfo"]);
                     break;
                 case ServiceEvent.AfterMove:
-                    MySqlController.RestoreDatabaseOnMove(thisService);
+                    MySqlController.RestoreDatabaseOnMove(thisService, (TCAdmin.GameHosting.SDK.Automation.GameHostingMoveInfo)((System.Collections.Generic.Dictionary<string, object>)args.Arguments[1])["ThisGameHostingMoveInfo"]);
                     break;
             }
 
