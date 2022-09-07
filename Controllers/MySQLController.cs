@@ -162,6 +162,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -216,6 +217,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -303,6 +305,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -342,6 +345,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -494,6 +498,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -531,6 +536,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -568,6 +574,7 @@ namespace MySqlModule.Controllers
                 }
                 catch (Exception e)
                 {
+                    TCAdmin.SDK.LogManager.WriteError(e);
                     return JavaScript(
                         $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                 }
