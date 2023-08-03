@@ -21,7 +21,7 @@ namespace MySqlModule.Helpers
             {
                 case ServiceEvent.BeforeDelete:
                 case ServiceEvent.BeforeReinstall:
-                    MySqlController.DeleteDatabase(thisService);
+                    MySqlController.DeleteDatabase(thisService, false);
                     break;
                 case ServiceEvent.BeforeMove:
                     MySqlController.BackupDatabaseOnMove(thisService, (TCAdmin.GameHosting.SDK.Automation.GameHostingMoveInfo)((System.Collections.Generic.Dictionary<string, object>)args.Arguments[1])["ThisGameHostingMoveInfo"]);
