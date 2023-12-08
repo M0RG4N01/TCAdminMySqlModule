@@ -132,6 +132,7 @@ namespace MySqlModule.Controllers
                                     , "GRANT USAGE on *.* to '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
                                     , "GRANT ALL PRIVILEGES ON " + dbName + ".* to '" + dbUser + "'@'%';");
                                 cmd.CommandText = createDbSql;
+                                TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Creating user '{0}' and database '{1}'...", dbUser, dbName));
                                 cmd.ExecuteNonQuery();
                                 createDb.Close();
                             }
@@ -143,6 +144,7 @@ namespace MySqlModule.Controllers
                                     , "CREATE USER IF NOT EXISTS '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
                                     , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
                                 cmd.CommandText = createDbSql;
+                                TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Creating user '{0}' and database '{1}'...", dbUser, dbName));
                                 cmd.ExecuteNonQuery();
                                 createDb.Close();
                             }
@@ -162,6 +164,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -186,6 +189,7 @@ namespace MySqlModule.Controllers
                                     , "GRANT USAGE on *.* to '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
                                     , "GRANT ALL PRIVILEGES ON " + dbName + ".* to '" + dbUser + "'@'%';");
                                 cmd.CommandText = createDbSql;
+                                TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Creating user '{0}' and database '{1}'...", dbUser, dbName));
                                 cmd.ExecuteNonQuery();
                                 createDb.Close();
                             }
@@ -197,6 +201,7 @@ namespace MySqlModule.Controllers
                                     , "CREATE USER IF NOT EXISTS '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
                                     , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
                                 cmd.CommandText = createDbSql;
+                                TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Creating user '{0}' and database '{1}'...", dbUser, dbName));
                                 cmd.ExecuteNonQuery();
                                 createDb.Close();
                             }
@@ -216,6 +221,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -281,6 +287,7 @@ namespace MySqlModule.Controllers
                            dbcount == 1 ? "DROP USER IF EXISTS `" + dbUser + "`@'%';" : string.Empty
                             , " DROP DATABASE IF EXISTS `" + dbName + "`;");
                         cmd.CommandText = deleteDbSql;
+                        TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Dropping user '{0}' and database '{1}'...", dbUser, dbName));
                         cmd.ExecuteNonQuery();
                         deleteDb.Close();
 
@@ -303,6 +310,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -320,6 +328,7 @@ namespace MySqlModule.Controllers
                             dbcount == 1 ? "DROP USER IF EXISTS `" + dbUser + "`@'%';" : string.Empty
                             , " DROP DATABASE IF EXISTS `" + dbName + "`;");
                         cmd.CommandText = deleteDbSql;
+                        TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Dropping user '{0}' and database '{1}'...", dbUser, dbName));
                         cmd.ExecuteNonQuery();
                         deleteDb.Close();
 
@@ -342,6 +351,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -360,7 +370,7 @@ namespace MySqlModule.Controllers
             });
         }
 
-        public static void DeleteDatabase(Service service)
+        public static void DeleteDatabase(Service service, bool keepPassword)
         {
             try
             {
@@ -389,6 +399,7 @@ namespace MySqlModule.Controllers
                             "DROP USER IF EXISTS `" + dbUser + "`@'%';"
                             , " DROP DATABASE IF EXISTS `" + dbName + "`;");
                         cmd.CommandText = deleteDbSql;
+                        TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Dropping user '{0}' and database '{1}'...", dbUser, dbName));
                         cmd.ExecuteNonQuery();
                         deleteDb.Close();
 
@@ -396,7 +407,8 @@ namespace MySqlModule.Controllers
                         {
                             service.Variables["_MySQLPlugin::Host"] = null;
                             service.Variables["_MySQLPlugin::Username"] = null;
-                            service.Variables["_MySQLPlugin::Password"] = null;
+                            if (!keepPassword)
+                                service.Variables["_MySQLPlugin::Password"] = null;
                             service.Variables["_MySQLPlugin::Database"] = null;
                         }
                         else
@@ -415,6 +427,7 @@ namespace MySqlModule.Controllers
                             "DROP USER IF EXISTS `" + dbUser + "`@'%';"
                             , " DROP DATABASE IF EXISTS `" + dbName + "`;");
                         cmd.CommandText = deleteDbSql;
+                        TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Dropping user '{0}' and database '{1}'...", dbUser, dbName));
                         cmd.ExecuteNonQuery();
                         deleteDb.Close();
 
@@ -422,7 +435,8 @@ namespace MySqlModule.Controllers
                         {
                             service.Variables["_MySQLPlugin::Host"] = null;
                             service.Variables["_MySQLPlugin::Username"] = null;
-                            service.Variables["_MySQLPlugin::Password"] = null;
+                            if (!keepPassword)
+                                service.Variables["_MySQLPlugin::Password"] = null;
                             service.Variables["_MySQLPlugin::Database"] = null;
                         }
                         else
@@ -494,6 +508,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -531,6 +546,7 @@ namespace MySqlModule.Controllers
                     }
                     catch (Exception e)
                     {
+                        TCAdmin.SDK.LogManager.WriteError(e);
                         return JavaScript(
                             $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                     }
@@ -568,6 +584,7 @@ namespace MySqlModule.Controllers
                 }
                 catch (Exception e)
                 {
+                    TCAdmin.SDK.LogManager.WriteError(e);
                     return JavaScript(
                         $"TCAdmin.Ajax.ShowBasicDialog('Error', 'Uh oh, something went wrong! Please contact an Administrator (see web console for details)!');console.log('{TCAdmin.SDK.Web.Utility.EscapeJavaScriptString(e.Message)}');$('body').css('cursor', 'default');");
                 }
@@ -641,13 +658,17 @@ namespace MySqlModule.Controllers
                                 }
                             }
 
-                            foreach (var table in tableList)
+                            try
                             {
-                                var alterDbtable =
-                                    $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
-                                tableCmd.CommandText = alterDbtable;
-                                tableCmd.ExecuteNonQuery();
+                                foreach (var table in tableList)
+                                {
+                                    var alterDbtable =
+                                        $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                    tableCmd.CommandText = alterDbtable;
+                                    tableCmd.ExecuteNonQuery();
+                                }
                             }
+                            catch { }
                         }
 
                         sqlBackup.ExportToMemoryStream(memory);
@@ -685,13 +706,15 @@ namespace MySqlModule.Controllers
                                 }
                             }
 
-                            foreach (var table in tableList)
-                            {
-                                var alterDbtable =
-                                    $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
-                                tableCmd.CommandText = alterDbtable;
-                                tableCmd.ExecuteNonQuery();
-                            }
+                            try {
+                                foreach (var table in tableList)
+                                {
+                                    var alterDbtable =
+                                        $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                    tableCmd.CommandText = alterDbtable;
+                                    tableCmd.ExecuteNonQuery();
+                                }
+                            } catch { }
                         }
 
                         sqlBackup.ExportToMemoryStream(memory);
@@ -855,13 +878,17 @@ namespace MySqlModule.Controllers
                                     }
                                 }
 
-                                foreach (var table in tableList)
+                                try
                                 {
-                                    var alterDbtable =
-                                        $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
-                                    tableCmd.CommandText = alterDbtable;
-                                    tableCmd.ExecuteNonQuery();
+                                    foreach (var table in tableList)
+                                    {
+                                        var alterDbtable =
+                                            $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                        tableCmd.CommandText = alterDbtable;
+                                        tableCmd.ExecuteNonQuery();
+                                    }
                                 }
+                                catch { }
                             }
 
                             sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
@@ -901,13 +928,17 @@ namespace MySqlModule.Controllers
                                     }
                                 }
 
-                                foreach (var table in tableList)
+                                try
                                 {
-                                    var alterDbtable =
-                                        $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
-                                    tableCmd.CommandText = alterDbtable;
-                                    tableCmd.ExecuteNonQuery();
+                                    foreach (var table in tableList)
+                                    {
+                                        var alterDbtable =
+                                            $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                        tableCmd.CommandText = alterDbtable;
+                                        tableCmd.ExecuteNonQuery();
+                                    }
                                 }
+                                catch { }
                             }
 
                             sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
@@ -918,7 +949,7 @@ namespace MySqlModule.Controllers
 
                 if (moveinfo.DeleteOriginal)
                 {
-                    DeleteDatabase(service);
+                    DeleteDatabase(service, true);
                 }
 
                 service.Save();
@@ -950,6 +981,9 @@ namespace MySqlModule.Controllers
                     var dbName = Path.GetFileNameWithoutExtension(files[i].Name);
                     var dbPass = TCAdmin.SDK.Misc.Random.RandomPassword(12, 2, 2, 1, "!");
 
+                    if (service.Variables.HasValue("_MySQLPlugin::Password"))
+                        dbPass = (string)service.Variables["_MySQLPlugin::Password"];
+
                     if (server.MySqlPluginUseDatacenter && datacenter.MySqlPluginIp != string.Empty)
                     {
                         using (MySqlConnection restoreDb = new MySqlConnection("server=" + datacenter.MySqlPluginIp + ";user=" +
@@ -968,6 +1002,7 @@ namespace MySqlModule.Controllers
                                         , "GRANT USAGE on *.* to '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
                                         , "GRANT ALL PRIVILEGES ON " + dbName + ".* to '" + dbUser + "'@'%';");
                                     cmd.CommandText = restoreDbSql;
+                                    TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Creating user '{0}' and database '{1}'...", dbUser, dbName));
                                     cmd.ExecuteNonQuery();
                                     restoreDb.Close();
                                 }
@@ -978,6 +1013,7 @@ namespace MySqlModule.Controllers
                                         , "CREATE USER IF NOT EXISTS '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
                                         , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
                                     cmd.CommandText = restoreDbSql;
+                                    TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Creating user '{0}' and database '{1}'...", dbUser, dbName));
                                     cmd.ExecuteNonQuery();
                                     restoreDb.Close();
                                 }
@@ -1029,6 +1065,7 @@ namespace MySqlModule.Controllers
                                         , "GRANT USAGE on *.* to '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
                                         , "GRANT ALL PRIVILEGES ON " + dbName + ".* to '" + dbUser + "'@'%';");
                                     cmd.CommandText = restoreDbSql;
+                                    TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Creating user '{0}' and database '{1}'...", dbUser, dbName));
                                     cmd.ExecuteNonQuery();
                                     restoreDb.Close();
                                 }
@@ -1040,6 +1077,7 @@ namespace MySqlModule.Controllers
                                         , "CREATE USER IF NOT EXISTS '" + dbUser + "'@'%' IDENTIFIED BY " + "'" + dbPass + "';"
                                         , "GRANT ALL ON " + dbName + ".* to '" + dbUser + "'@'%';");
                                     cmd.CommandText = restoreDbSql;
+                                    TCAdmin.SDK.LogManager.WriteDebug(string.Format("[MySqlManager] Creating user '{0}' and database '{1}'...", dbUser, dbName));
                                     cmd.ExecuteNonQuery();
                                     restoreDb.Close();
                                 }
