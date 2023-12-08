@@ -658,13 +658,17 @@ namespace MySqlModule.Controllers
                                 }
                             }
 
-                            foreach (var table in tableList)
+                            try
                             {
-                                var alterDbtable =
-                                    $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
-                                tableCmd.CommandText = alterDbtable;
-                                tableCmd.ExecuteNonQuery();
+                                foreach (var table in tableList)
+                                {
+                                    var alterDbtable =
+                                        $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                    tableCmd.CommandText = alterDbtable;
+                                    tableCmd.ExecuteNonQuery();
+                                }
                             }
+                            catch { }
                         }
 
                         sqlBackup.ExportToMemoryStream(memory);
@@ -702,13 +706,15 @@ namespace MySqlModule.Controllers
                                 }
                             }
 
-                            foreach (var table in tableList)
-                            {
-                                var alterDbtable =
-                                    $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
-                                tableCmd.CommandText = alterDbtable;
-                                tableCmd.ExecuteNonQuery();
-                            }
+                            try {
+                                foreach (var table in tableList)
+                                {
+                                    var alterDbtable =
+                                        $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                    tableCmd.CommandText = alterDbtable;
+                                    tableCmd.ExecuteNonQuery();
+                                }
+                            } catch { }
                         }
 
                         sqlBackup.ExportToMemoryStream(memory);
@@ -872,13 +878,17 @@ namespace MySqlModule.Controllers
                                     }
                                 }
 
-                                foreach (var table in tableList)
+                                try
                                 {
-                                    var alterDbtable =
-                                        $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
-                                    tableCmd.CommandText = alterDbtable;
-                                    tableCmd.ExecuteNonQuery();
+                                    foreach (var table in tableList)
+                                    {
+                                        var alterDbtable =
+                                            $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                        tableCmd.CommandText = alterDbtable;
+                                        tableCmd.ExecuteNonQuery();
+                                    }
                                 }
+                                catch { }
                             }
 
                             sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
@@ -918,13 +928,17 @@ namespace MySqlModule.Controllers
                                     }
                                 }
 
-                                foreach (var table in tableList)
+                                try
                                 {
-                                    var alterDbtable =
-                                        $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
-                                    tableCmd.CommandText = alterDbtable;
-                                    tableCmd.ExecuteNonQuery();
+                                    foreach (var table in tableList)
+                                    {
+                                        var alterDbtable =
+                                            $"ALTER TABLE {table} CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+                                        tableCmd.CommandText = alterDbtable;
+                                        tableCmd.ExecuteNonQuery();
+                                    }
                                 }
+                                catch { }
                             }
 
                             sqlBackup.ExportToFile(TCAdmin.SDK.Misc.FileSystem.CombinePath(service.RootDirectory, dbName + ".sql", server.OperatingSystem));
